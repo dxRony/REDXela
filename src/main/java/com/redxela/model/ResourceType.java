@@ -1,0 +1,40 @@
+package com.redxela.model;
+
+/**
+ * Recursos físicos limitados del Centro de Distribución REDXela.
+ */
+public enum ResourceType {
+    PACKING_STATION("Estación de Empaque", 6, "Estación donde se empaqueta y sella la mercadería"),
+    LOADING_DOCK("Área de Carga", 2, "Bahía de carga para atención y despacho a camiones"),
+    WAREHOUSE_WORKER("Encargado de Bodega", 10, "Personal operativo para picking y movilización manual"),
+    FORKLIFT("Montacargas", 3, "Equipo pesado para traslado de carga pesada y estibado"),
+    QUALITY_STATION("Control de Calidad", 4, "Mesa de inspección visual, técnica y de daños"),
+    BARCODE_SCANNER("Escáner de Códigos", 1, "Sistema compartido y crítico entre Recepción y Despacho");
+
+    private final String displayName;
+    private final int totalCapacity;
+    private final String description;
+
+    ResourceType(String displayName, int totalCapacity, String description) {
+        this.displayName = displayName;
+        this.totalCapacity = totalCapacity;
+        this.description = description;
+    }
+
+    public String getDisplayName() {
+        return displayName;
+    }
+
+    public int getTotalCapacity() {
+        return totalCapacity;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    @Override
+    public String toString() {
+        return displayName + " (" + totalCapacity + " disp.)";
+    }
+}
