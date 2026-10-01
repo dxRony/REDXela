@@ -10,11 +10,20 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Diálogo para el ingreso manual de un pedido específico.
+ * Dialogo modal para la creacion manual de pedidos personalizados.
+ * Permite definir el cliente, nivel de servicio SLA, producto solicitado y cantidad.
  */
 public class ManualOrderDialog extends JDialog {
+
+    // Secuenciador para IDs de pedidos manuales (inicia en 5000 para diferenciarlos visualmente).
     private static final AtomicInteger manualCounter = new AtomicInteger(5000);
 
+    /**
+     * Construye y despliega el formulario modal de ingreso manual.
+     *
+     * @param parent Ventana principal padre.
+     * @param scheduler Planificador donde se insertara el pedido.
+     */
     public ManualOrderDialog(JFrame parent, OrderScheduler scheduler) {
         super(parent, "Ingreso Manual de Pedido", true);
         setSize(480, 360);
@@ -24,7 +33,7 @@ public class ManualOrderDialog extends JDialog {
         JPanel form = new JPanel(new GridLayout(5, 2, 10, 12));
         form.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Campos
+        // Campos del formulario
         form.add(new JLabel("Nombre del Cliente:"));
         JTextField txtClient = new JTextField("Cliente Manual #" + manualCounter.incrementAndGet());
         form.add(txtClient);
@@ -56,7 +65,7 @@ public class ManualOrderDialog extends JDialog {
 
         add(form, BorderLayout.CENTER);
 
-        // Botones de acción
+        // Botones de accion
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnCancel = new JButton("Cancelar");
         btnCancel.addActionListener(e -> dispose());

@@ -1,8 +1,11 @@
 package com.redxela.model;
 
+import lombok.Getter;
+
 /**
- * Recursos físicos limitados del Centro de Distribución REDXela.
+ * Recursos fisicos limitados del centro de distribucion
  */
+@Getter
 public enum ResourceType {
     PACKING_STATION("Estación de Empaque", 6, "Estación donde se empaqueta y sella la mercadería"),
     LOADING_DOCK("Área de Carga", 2, "Bahía de carga para atención y despacho a camiones"),
@@ -19,18 +22,6 @@ public enum ResourceType {
         this.displayName = displayName;
         this.totalCapacity = totalCapacity;
         this.description = description;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public int getTotalCapacity() {
-        return totalCapacity;
-    }
-
-    public String getDescription() {
-        return description;
     }
 
     @Override

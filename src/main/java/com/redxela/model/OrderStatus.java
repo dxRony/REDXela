@@ -1,8 +1,12 @@
 package com.redxela.model;
 
+import lombok.Getter;
+
 /**
- * Estados del ciclo de vida de un pedido en la simulación.
+ * Estados del ciclo de vida de un pedido en la simulacion
+ * (Pendiente, Espera de Inventario, Espera de Recursos, En Proceso, Deadlock, Completado, Cancelado).
  */
+@Getter
 public enum OrderStatus {
     PENDIENTE("Pendiente de Planificación", "#808080"),
     EN_ESPERA_INVENTARIO("Esperando Stock", "#E67E22"),
@@ -18,14 +22,6 @@ public enum OrderStatus {
     OrderStatus(String label, String hexColor) {
         this.label = label;
         this.hexColor = hexColor;
-    }
-
-    public String getLabel() {
-        return label;
-    }
-
-    public String getHexColor() {
-        return hexColor;
     }
 
     @Override

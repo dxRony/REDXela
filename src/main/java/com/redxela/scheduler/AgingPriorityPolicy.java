@@ -1,16 +1,15 @@
 package com.redxela.scheduler;
 
 import com.redxela.model.Order;
-
 import java.util.Comparator;
 
 /**
- * Política con Envejecimiento (Aging):
- * Da prioridad al nivel de servicio, pero incrementa gradualmente la prioridad
- * de los pedidos conforme acumulan tiempo de espera, evitando la inanición (starvation)
- * de pedidos económicos (Nivel 5).
+ * Politica de prioridad dinamica con envejecimiento (Aging).
+ * Incrementa gradualmente la prioridad de los pedidos que esperan en la cola
+ * para evitar la inanicion de pedidos de baja prioridad.
  */
 public class AgingPriorityPolicy implements SchedulingPolicy {
+
     @Override
     public String getName() {
         return "Prioridad Dinámica con Envejecimiento (Aging)";
@@ -21,6 +20,11 @@ public class AgingPriorityPolicy implements SchedulingPolicy {
         return "Combina el SLA con el tiempo acumulado en espera. Evita la inanición de pedidos económicos elevando su prioridad.";
     }
 
+    /**
+     * Retorna el comparador que evalua en tiempo real el puntaje de aging de ambos
+     * pedidos,
+     * ordenandolos de mayor a menor puntaje (orden descendente).
+     */
     @Override
     public Comparator<Order> getComparator() {
         return (o1, o2) -> {
@@ -29,7 +33,8 @@ public class AgingPriorityPolicy implements SchedulingPolicy {
             double p2 = o2.calculateAgingPriority(now);
             // Mayor puntaje de prioridad va primero (orden descendente)
             int cmp = Double.compare(p2, p1);
-            if (cmp != 0) return cmp;
+            if (cmp != 0)
+                return cmp;
             return Long.compare(o1.getCreatedAt(), o2.getCreatedAt());
         };
     }

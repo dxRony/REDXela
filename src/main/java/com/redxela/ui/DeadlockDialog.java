@@ -8,9 +8,20 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Diálogo modal para visualizar y resolver interactivamente una situación de Deadlock detectada.
+ * Dialogo modal para visualizar y resolver situaciones de interbloqueo (deadlock).
+ * Muestra el grafo de asignacion de recursos involucrado y permite seleccionar
+ * manualmente que pedido continuara y cual sera desalojado (preemption).
  */
 public class DeadlockDialog extends JDialog {
+
+    /**
+     * Construye y despliega el dialogo modal de resolucion de Deadlock.
+     *
+     * @param parent Ventana principal padre.
+     * @param info Diagnostico del interbloqueo emitido por el detector.
+     * @param detector Instancia del detector para ejecutar la resolucion por desalojo.
+     * @param scheduler Planificador para reencolar el pedido victima.
+     */
     public DeadlockDialog(JFrame parent, DeadlockDetector.DeadlockInfo info,
                           DeadlockDetector detector, OrderScheduler scheduler) {
         super(parent, "¡ALERTA CRÍTICA: INTERBLOQUEO (DEADLOCK) DETECTADO!", true);
@@ -29,7 +40,7 @@ public class DeadlockDialog extends JDialog {
         headerPanel.add(titleLbl, BorderLayout.CENTER);
         add(headerPanel, BorderLayout.NORTH);
 
-        // 2. Cuerpo del Diagnóstico
+        // 2. Cuerpo del Diagnostico
         JPanel contentPanel = new JPanel(new BorderLayout(10, 10));
         contentPanel.setBorder(BorderFactory.createEmptyBorder(10, 15, 10, 15));
 
@@ -54,7 +65,7 @@ public class DeadlockDialog extends JDialog {
         contentPanel.add(new JScrollPane(txtDiag), BorderLayout.CENTER);
         add(contentPanel, BorderLayout.CENTER);
 
-        // 3. Botones de Resolución Manual
+        // 3. Botones de Resolucion Manual por Desalojo
         JPanel actionPanel = new JPanel(new GridLayout(2, 1, 8, 8));
         actionPanel.setBorder(BorderFactory.createEmptyBorder(0, 15, 15, 15));
 

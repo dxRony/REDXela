@@ -12,29 +12,42 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Panel de visualización física del almacén con asignación no contigua.
- * Muestra el estado de cada ubicación física (Pasillo, Rack, Nivel) y las existencias por producto.
+ * Panel visual que representa la matriz de almacenamiento no contiguo del almacen.
+ * Muestra el estado de cada slot (pasillo, rack, nivel) y la tabla de existencias actual.
  */
 public class WarehouseViewPanel extends JPanel {
+
+    // Gestor fisico del almacen.
     private final WarehouseStorageManager storageManager;
+
+    // Panel contenedor de la cuadricula tridimensional de ranuras.
     private final JPanel gridPanel;
+
+    // Modelo de datos para la tabla de inventario por producto.
     private final DefaultTableModel stockModel;
+
+    // Etiqueta de resumen que muestra la ocupacion total en porcentaje y unidades.
     private final JLabel capacitySummaryLabel;
 
+    /**
+     * Construye el panel visual de almacenamiento.
+     *
+     * @param storageManager Gestor de almacenamiento fisico.
+     */
     public WarehouseViewPanel(WarehouseStorageManager storageManager) {
         this.storageManager = storageManager;
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // 1. Panel Superior con Estadísticas de Capacidad
+        // 1. Panel Superior con Estadisticas de Capacidad
         JPanel topPanel = new JPanel(new BorderLayout());
         capacitySummaryLabel = new JLabel("Capacidad Almacén: 0 / 0 slots ocupados (0%)");
         capacitySummaryLabel.setFont(new Font("Segoe UI", Font.BOLD, 14));
         topPanel.add(capacitySummaryLabel, BorderLayout.WEST);
         add(topPanel, BorderLayout.NORTH);
 
-        // 2. Panel Central: Matriz de Slots Físicos
-        gridPanel = new JPanel(new GridLayout(6, 8, 6, 6)); // Cuadrícula de slots
+        // 2. Panel Central: Matriz de Slots Fisicos
+        gridPanel = new JPanel(new GridLayout(6, 8, 6, 6)); // Cuadricula de slots
         gridPanel.setBorder(BorderFactory.createTitledBorder(
                 BorderFactory.createLineBorder(new Color(70, 70, 70)),
                 "MAPA FÍSICO DE RANURAS / SLOTS (ASIGNACIÓN NO CONTIGUA)",
@@ -70,6 +83,9 @@ public class WarehouseViewPanel extends JPanel {
         refreshData();
     }
 
+    /**
+     * Reconstruye la cuadricula grafica de slots y actualiza la tabla de existencias de productos.
+     */
     public void refreshData() {
         // Actualizar resumen
         int total = storageManager.getTotalSlots();
@@ -77,7 +93,7 @@ public class WarehouseViewPanel extends JPanel {
         double pct = total > 0 ? (occupied / (double) total) * 100.0 : 0.0;
         capacitySummaryLabel.setText(String.format("Capacidad Almacén: %d / %d slots ocupados (%.1f%%)", occupied, total, pct));
 
-        // Reconstruir cuadrícula de slots
+        // Reconstruir cuadricula de slots
         gridPanel.removeAll();
         List<WarehouseSlot> slots = storageManager.getAllSlots();
         for (WarehouseSlot slot : slots) {

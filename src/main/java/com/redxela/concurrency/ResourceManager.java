@@ -2,39 +2,52 @@ package com.redxela.concurrency;
 
 import com.redxela.model.Order;
 import com.redxela.model.ResourceType;
-
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Administrador de Recursos Compartidos del Centro de Distribución.
- * Utiliza semáforos para controlar la exclusión mutua y capacidad de cada recurso.
- * Mantiene el estado para el Grafo de Asignación de Recursos (RAG).
+ * Administra los recursos fisicos compartidos del centro de distribucion utilizando
+ * semaforos contadores justos (FIFO) y mantiene el Grafo de Asignacion de Recursos (RAG).
  */
 public class ResourceManager {
-    // Semáforos para cada recurso físico (inician con la capacidad total disponible)
+
+    // Tabla de semaforos contadores para cada tipo de recurso fisico disponible en el centro. Cada
+    // semaforo se inicializa con la capacidad total definida en ResourceType.getTotalCapacity().
     private final Map<ResourceType, Semaphore> semaphores = new EnumMap<>(ResourceType.class);
 
-    // Rastreo de asignación (Grafo de Asignación de Recursos / RAG)
-    // Recurso -> Lista de pedidos que lo tienen asignado actualmente
+    // Mapeo del Grafo de Asignacion de Recursos (RAG): Representa las Aristas de Asignacion (Recurso ->
+    // Procesos). Indica el conjunto de pedidos (hilos) que actualmente retienen instancias de cada
+    // recurso.
     private final Map<ResourceType, Set<Order>> resourceHolders = new EnumMap<>(ResourceType.class);
-    // Pedido -> Recurso que está esperando actualmente (arista de solicitud P -> R)
+
+    // Mapeo del Grafo de Asignacion de Recursos (RAG): Representa las Aristas de Solicitud / Espera
+    // (Proceso -> Recurso). Indica que recurso especifico esta esperando adquirir cada pedido que se
+    // encuentra bloqueado.
     private final Map<Order, ResourceType> orderWaitingFor = new ConcurrentHashMap<>();
 
-    // Lock de sincronización para operaciones sobre el grafo RAG
+    // Cerrojo de exclusion mutua para garantizar operaciones atomicas e indivisibles sobre la topologia
+    // del Grafo de Asignacion de Recursos (RAG).
     private final ReentrantLock ragLock = new ReentrantLock();
 
+    /**
+     * Construye e inicializa los semaforos contadores de recursos con equidad justa (FIFO).
+     */
     public ResourceManager() {
         for (ResourceType type : ResourceType.values()) {
-            semaphores.put(type, new Semaphore(type.getTotalCapacity(), true)); // Semáforo justo (FIFO)
+            // true = Fairness activado (orden FIFO para despertar hilos bloqueados)
+            semaphores.put(type, new Semaphore(type.getTotalCapacity(), true));
             resourceHolders.put(type, ConcurrentHashMap.newKeySet());
         }
     }
 
     /**
-     * Registra manualmente la espera de un recurso (útil para pruebas y control de grafo RAG).
+     * Registra explicitamente en el grafo RAG que un pedido esta en espera de un recurso.
+     * Util para pruebas unitarias deterministas y control fino de sincronizacion.
+     *
+     * @param order Pedido que solicita el recurso.
+     * @param resource Recurso fisico disputado.
      */
     public void registerWaiting(Order order, ResourceType resource) {
         ragLock.lock();
@@ -47,11 +60,23 @@ public class ResourceManager {
     }
 
     /**
-     * Intenta adquirir un recurso. Si no está disponible, el hilo se bloquea hasta obtenerlo.
-     * Actualiza el Grafo de Asignación de Recursos para detección de deadlocks.
+     * Intenta adquirir permisos de un recurso fisico compartido.
+     * 
+     * Flujo de Concurrencia de SO:
+     * 
+     *   - Registra la arista de solicitud  Order -> Resource en el Grafo RAG.
+     *   - Invoca  Semaphore.acquire(int). Si no hay permisos suficientes disponibles,
+     *       el hilo de trabajo del pedido se suspende (estado  BLOCKED / WAITING).
+     *   - Al despertar con los permisos en posesion, se transforma la arista de solicitud
+     *       en una arista de asignacion  Resource -> Order.
+     * 
+     * @param order Pedido en ejecucion concurrente que requiere el recurso.
+     * @param resource Tipo de recurso fisico solicitado.
+     * @param count Cantidad de instancias requeridas simultaneamente.
+     * @throws InterruptedException Si el hilo es interrumpido mientras espera los permisos.
      */
     public void acquireResource(Order order, ResourceType resource, int count) throws InterruptedException {
-        // Registrar arista de solicitud en el RAG (Order -> Resource)
+        // 1. Registrar arista de solicitud en el RAG (Order -> Resource)
         ragLock.lock();
         try {
             order.setWaitingForResource(resource);
@@ -60,11 +85,11 @@ public class ResourceManager {
             ragLock.unlock();
         }
 
-        // Adquirir los permisos en el semáforo (bloquea el hilo del pedido si no hay disponibles)
+        // 2. Adquisicion bloqueante en el semaforo contador (suspension de hilo en espera)
         Semaphore sem = semaphores.get(resource);
         sem.acquire(count);
 
-        // Al obtener el recurso, convertir la arista de solicitud a arista de asignación (Resource -> Order)
+        // 3. Tras despertar, convertir la solicitud en arista de asignacion activa (Resource -> Order)
         ragLock.lock();
         try {
             orderWaitingFor.remove(order);
@@ -77,7 +102,14 @@ public class ResourceManager {
     }
 
     /**
-     * Libera un recurso previamente adquirido.
+     * Libera las unidades de un recurso fisico previamente retenido por un pedido.
+     * 
+     * Elimina la arista de asignacion del RAG y ejecuta Semaphore#release(int),
+     * lo cual despierta al siguiente hilo en la cola FIFO del semaforo.
+     * 
+     * @param order Pedido que concluyo el uso del recurso.
+     * @param resource Recurso fisico liberado.
+     * @param count Cantidad de permisos a reincorporar al semaforo.
      */
     public void releaseResource(Order order, ResourceType resource, int count) {
         ragLock.lock();
@@ -88,13 +120,19 @@ public class ResourceManager {
             ragLock.unlock();
         }
 
+        // Devolver permisos al semaforo para despertar hilos en espera
         Semaphore sem = semaphores.get(resource);
         sem.release(count);
     }
 
     /**
-     * Libera deliberadamente todos los recursos retenidos por un pedido.
-     * Esencial para la resolución manual de Deadlocks (preempting / expulsión de recursos).
+     * Libera de forma atomica y forzosa todos los recursos retenidos por un pedido.
+     * 
+     * Mecanismo de Desalojo (Preemption):
+     * Esencial para la resolucion manual de Deadlocks. Permite romper la condicion
+     * de Hold and Wait despojando al proceso de sus recursos para asignarselos al ganador.
+     * 
+     * @param order Pedido seleccionado como victima del desalojo.
      */
     public void releaseAllResources(Order order) {
         ragLock.lock();
@@ -113,26 +151,61 @@ public class ResourceManager {
         }
     }
 
+    /**
+     * Consulta el numero de unidades disponibles actualmente en el semaforo del recurso.
+     *
+     * @param resource Recurso a consultar.
+     * @return Cantidad de permisos libres.
+     */
     public int getAvailableUnits(ResourceType resource) {
         return semaphores.get(resource).availablePermits();
     }
 
+    /**
+     * Consulta el numero de unidades en uso en este instante.
+     *
+     * @param resource Recurso a consultar.
+     * @return Capacidad total menos permisos disponibles.
+     */
     public int getOccupiedUnits(ResourceType resource) {
         return resource.getTotalCapacity() - getAvailableUnits(resource);
     }
 
+    /**
+     * Calcula el porcentaje de aprovechamiento o utilizacion del recurso.
+     *
+     * @param resource Recurso a evaluar.
+     * @return Porcentaje de 0.0% a 100.0%.
+     */
     public double getUtilizationPercentage(ResourceType resource) {
         return ((double) getOccupiedUnits(resource) / resource.getTotalCapacity()) * 100.0;
     }
 
+    /**
+     * Retorna una vista de solo lectura de los pedidos que actualmente ocupan el recurso.
+     *
+     * @param resource Recurso a consultar.
+     * @return Conjunto inmutable de pedidos duenos del recurso.
+     */
     public Set<Order> getHolders(ResourceType resource) {
         return Collections.unmodifiableSet(resourceHolders.get(resource));
     }
 
+    /**
+     * Obtiene el recurso por el cual un pedido especifico se encuentra en espera.
+     *
+     * @param order Pedido a inspeccionar.
+     * @return ResourceType esperado, o null si no esta bloqueado.
+     */
     public ResourceType getWaitingResource(Order order) {
         return orderWaitingFor.get(order);
     }
 
+    /**
+     * Retorna una instantanea defensiva del mapa de solicitudes en espera del grafo RAG.
+     *
+     * @return Copia segura del mapa Pedido -> RecursoEsperado.
+     */
     public Map<Order, ResourceType> getOrderWaitingForMap() {
         ragLock.lock();
         try {
@@ -142,6 +215,11 @@ public class ResourceManager {
         }
     }
 
+    /**
+     * Retorna una instantanea defensiva del mapa de tenedores de recursos del grafo RAG.
+     *
+     * @return Copia segura del mapa Recurso -> ConjuntoDePedidos
+     */
     public Map<ResourceType, Set<Order>> getResourceHoldersMap() {
         ragLock.lock();
         try {
@@ -155,6 +233,11 @@ public class ResourceManager {
         }
     }
 
+    /**
+     * Proporciona acceso al cerrojo de sincronizacion del RAG para operaciones coordinadas.
+     *
+     * @return Instancia del ReentrantLock del RAG.
+     */
     public ReentrantLock getRagLock() {
         return ragLock;
     }

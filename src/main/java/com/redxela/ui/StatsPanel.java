@@ -11,20 +11,40 @@ import java.awt.*;
 import java.util.Map;
 
 /**
- * Panel de estadísticas y métricas de desempeño del Centro de Distribución.
+ * Panel de estadisticas y metricas de rendimiento del centro de distribucion.
+ * Presenta indicadores de tiempos de espera, cumplimiento de SLA y uso de recursos.
  */
 public class StatsPanel extends JPanel {
+
+    // Recolector de metricas de la simulacion.
     private final SimulationMetrics metrics;
 
+    // Etiqueta KPI para pedidos completados.
     private final JLabel lblCompleted;
+
+    // Etiqueta KPI para pedidos en espera.
     private final JLabel lblWaiting;
+
+    // Etiqueta KPI para pedidos en procesamiento activo.
     private final JLabel lblProcessing;
+
+    // Etiqueta KPI para tiempo medio de espera.
     private final JLabel lblAvgWait;
+
+    // Etiqueta KPI para tiempo medio de procesamiento.
     private final JLabel lblAvgProc;
 
+    // Modelo de datos para la tabla de cumplimiento SLA.
     private final DefaultTableModel slaModel;
+
+    // Modelo de datos para la tabla de ocupacion de recursos.
     private final DefaultTableModel resourceModel;
 
+    /**
+     * Construye el panel de estadisticas con tarjetas superiores y tablas comparativas.
+     *
+     * @param metrics Gestor de metricas.
+     */
     public StatsPanel(SimulationMetrics metrics) {
         this.metrics = metrics;
         setLayout(new BorderLayout(10, 10));
@@ -63,7 +83,7 @@ public class StatsPanel extends JPanel {
         slaWrapper.add(new JScrollPane(slaTable), BorderLayout.CENTER);
         tablesPanel.add(slaWrapper);
 
-        // Tabla Ocupación de Recursos
+        // Tabla Ocupacion de Recursos
         String[] resCols = {"Recurso Compartido", "Capacidad Total", "Nivel de Ocupación"};
         resourceModel = new DefaultTableModel(resCols, 0) {
             @Override
@@ -87,6 +107,9 @@ public class StatsPanel extends JPanel {
         add(tablesPanel, BorderLayout.CENTER);
     }
 
+    /**
+     * Construye una tarjeta grafica individual para una metrica KPI.
+     */
     private JLabel createKpiCard(JPanel parent, String title, String initialValue, Color accent) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -108,6 +131,9 @@ public class StatsPanel extends JPanel {
         return valLbl;
     }
 
+    /**
+     * Actualiza los valores de las tarjetas y los registros de las dos tablas de metricas.
+     */
     public void refreshData() {
         lblCompleted.setText(String.valueOf(metrics.getCompletedOrdersCount()));
         lblWaiting.setText(String.valueOf(metrics.getWaitingOrdersCount()));
@@ -130,7 +156,7 @@ public class StatsPanel extends JPanel {
             });
         }
 
-        // Actualizar tabla de ocupación de recursos
+        // Actualizar tabla de ocupacion de recursos
         resourceModel.setRowCount(0);
         Map<ResourceType, Double> utilMap = metrics.getResourceUtilization();
         for (ResourceType type : ResourceType.values()) {

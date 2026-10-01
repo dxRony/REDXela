@@ -1,11 +1,14 @@
 package com.redxela.model;
 
+import lombok.Getter;
+
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Define los 5 tipos de mercancía con sus características y combinaciones de recursos.
+ * Define los 5 tipos de mercancia con sus caracteristicas y combinaciones de recursos.
  */
+@Getter
 public enum MerchandiseType {
     ESTANDAR(
             "Estándar / Retail",
@@ -69,24 +72,8 @@ public enum MerchandiseType {
     MerchandiseType(String displayName, String description, List<ResourceRequirement> steps, double timeMultiplier) {
         this.displayName = displayName;
         this.description = description;
-        this.steps = steps;
+        this.steps = Collections.unmodifiableList(steps);
         this.timeMultiplier = timeMultiplier;
-    }
-
-    public String getDisplayName() {
-        return displayName;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public List<ResourceRequirement> getSteps() {
-        return Collections.unmodifiableList(steps);
-    }
-
-    public double getTimeMultiplier() {
-        return timeMultiplier;
     }
 
     @Override

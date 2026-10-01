@@ -13,18 +13,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * Panel con tablas sincronizadas que muestran los pedidos en procesamiento activo
- * y la cola de espera organizada según la política activa.
+ * Panel que muestra las tablas de pedidos en ejecucion y en cola de espera.
+ * Permite visualizar el avance de cada pedido, recursos retenidos y prioridades calculadas.
  */
 public class OrdersTablePanel extends JPanel {
+
+    // Planificador de pedidos del cual se consultan las listas activas y en espera.
     private final OrderScheduler scheduler;
 
+    // Modelo de datos para la tabla de pedidos en procesamiento.
     private final DefaultTableModel processingModel;
+
+    // Tabla grafica para renderizar pedidos en procesamiento.
     private final JTable processingTable;
 
+    // Modelo de datos para la tabla de la cola de espera.
     private final DefaultTableModel waitingModel;
+
+    // Tabla grafica para renderizar la cola de espera.
     private final JTable waitingTable;
 
+    /**
+     * Construye el panel con disposicion vertical dividida 50/50 para ambas tablas.
+     *
+     * @param scheduler Instancia del planificador central.
+     */
     public OrdersTablePanel(OrderScheduler scheduler) {
         this.scheduler = scheduler;
         setLayout(new GridLayout(2, 1, 10, 10));
@@ -77,6 +90,9 @@ public class OrdersTablePanel extends JPanel {
         add(waitPanel);
     }
 
+    /**
+     * Aplica fuentes y alineaciones centradas a las columnas de la tabla.
+     */
     private void setupColumnStyles(JTable table) {
         table.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         DefaultTableCellRenderer centerRenderer = new DefaultTableCellRenderer();
@@ -84,6 +100,9 @@ public class OrdersTablePanel extends JPanel {
         table.setDefaultRenderer(Object.class, centerRenderer);
     }
 
+    /**
+     * Actualiza el contenido de ambas tablas con los datos en vivo del planificador.
+     */
     public void refreshData() {
         // Actualizar pedidos en proceso
         List<Order> processing = scheduler.getProcessingOrders();

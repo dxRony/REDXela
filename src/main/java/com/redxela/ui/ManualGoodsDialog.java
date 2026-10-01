@@ -8,9 +8,17 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Diálogo para registrar la llegada manual de mercancía desde un camión al Área de Recepción.
+ * Dialogo modal para registrar manualmente la llegada de un camion con mercaderia.
+ * Permite seleccionar el producto y la cantidad recibida para ingresarla al bufer de recepcion.
  */
 public class ManualGoodsDialog extends JDialog {
+
+    /**
+     * Construye y despliega el formulario modal de recepcion de camion.
+     *
+     * @param parent Ventana principal padre.
+     * @param receptionProcess Proceso productor que depositara el lote en el bufer sincronizado.
+     */
     public ManualGoodsDialog(JFrame parent, ReceptionProcess receptionProcess) {
         super(parent, "Recepción de Mercadería (Llegada de Camión)", true);
         setSize(480, 260);
@@ -48,6 +56,7 @@ public class ManualGoodsDialog extends JDialog {
             if (prod == null) return;
             int qty = (int) spinQty.getValue();
 
+            // Ejecutar en hilo de fondo para no bloquear el Event Dispatch Thread (EDT)
             new Thread(() -> {
                 try {
                     receptionProcess.registerArrival(prod, qty);

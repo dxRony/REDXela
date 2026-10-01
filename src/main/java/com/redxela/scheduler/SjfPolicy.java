@@ -5,11 +5,12 @@ import com.redxela.model.Order;
 import java.util.Comparator;
 
 /**
- * Política de Trabajo Más Corto Primero (SJF / Menor Cantidad de Artículos):
- * Atiende primero a los pedidos con menor cantidad total de artículos,
- * con el objetivo de liberar estaciones de trabajo más rápido y maximizar el rendimiento.
+ * Politica de planificacion de trabajo mas corto primero (SJF).
+ * Prioriza los pedidos con menor cantidad de articulos para reducir
+ * el tiempo promedio de espera en el sistema.
  */
 public class SjfPolicy implements SchedulingPolicy {
+
     @Override
     public String getName() {
         return "Trabajo Más Corto Primero (SJF / Cantidad de Artículos)";
@@ -20,6 +21,11 @@ public class SjfPolicy implements SchedulingPolicy {
         return "Procesa primero los pedidos con menor número de artículos para liberar recursos y estaciones rápidamente.";
     }
 
+    /**
+     * Retorna el comparador que ordena ascendentemente por cantidad total de
+     * articulos
+     * y luego por tiempo de creacion en la cola.
+     */
     @Override
     public Comparator<Order> getComparator() {
         return Comparator.comparingInt(Order::getTotalUnits)

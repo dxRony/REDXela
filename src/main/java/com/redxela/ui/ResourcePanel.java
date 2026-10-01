@@ -13,15 +13,28 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Panel que visualiza en tiempo real el estado de cada recurso físico compartido:
- * Capacidad total, unidades en uso, unidades disponibles y qué pedidos los retienen.
+ * Panel visual que muestra el estado y nivel de utilizacion de los recursos compartidos.
+ * Incluye barras de progreso con codigo de colores e identificacion de pedidos retenedores.
  */
 public class ResourcePanel extends JPanel {
+
+    // Referencia al gestor de semaforos.
     private final ResourceManager resourceManager;
+
+    // Mapeo de barras de progreso por cada recurso fisico.
     private final Map<ResourceType, JProgressBar> progressBars = new EnumMap<>(ResourceType.class);
+
+    // Mapeo de etiquetas con conteo numerico de ocupacion (ej. "3 / 6 en uso").
     private final Map<ResourceType, JLabel> detailLabels = new EnumMap<>(ResourceType.class);
+
+    // Mapeo de etiquetas que listan los pedidos que retienen el recurso.
     private final Map<ResourceType, JLabel> holdersLabels = new EnumMap<>(ResourceType.class);
 
+    /**
+     * Construye el panel con una disposicion en cuadricula 2x3 para los 6 recursos.
+     *
+     * @param resourceManager Gestor de semaforos de recursos.
+     */
     public ResourcePanel(ResourceManager resourceManager) {
         this.resourceManager = resourceManager;
         setLayout(new GridLayout(2, 3, 10, 10));
@@ -39,6 +52,9 @@ public class ResourcePanel extends JPanel {
         }
     }
 
+    /**
+     * Construye la tarjeta grafica visual para un recurso individual.
+     */
     private JPanel createResourceCard(ResourceType type) {
         JPanel card = new JPanel(new BorderLayout(5, 5));
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -75,6 +91,9 @@ public class ResourcePanel extends JPanel {
         return card;
     }
 
+    /**
+     * Refresca las barras y etiquetas con la informacion actual de los semaforos.
+     */
     public void refreshData() {
         for (ResourceType type : ResourceType.values()) {
             int occupied = resourceManager.getOccupiedUnits(type);
@@ -85,7 +104,7 @@ public class ResourcePanel extends JPanel {
             pb.setValue(occupied);
             pb.setString(String.format("%d / %d (%.0f%%)", occupied, total, pct));
 
-            // Colorear según nivel de congestión
+            // Colorear segun nivel de congestion
             if (occupied == total) {
                 pb.setForeground(new Color(231, 76, 60)); // Rojo: 100% saturado
             } else if (occupied > total * 0.7) {

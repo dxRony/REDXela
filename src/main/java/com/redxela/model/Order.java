@@ -1,39 +1,90 @@
 package com.redxela.model;
 
+import lombok.Getter;
+import lombok.Setter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Representa un pedido dentro del Centro de Distribución REDXela.
+ * representa un pedido dentro del centro de distribucion
+ * modela la informacion del cliente, nivel de servicio (SLA), mercancia,
+ * tiempos de atencion y los recursos asignados/esperados durante su
+ * procesamiento.
  */
+@Getter
 public class Order {
+
+    // Identificador unico alfanumerico del pedido.
     private final String id;
+
+    // Nombre de la cuenta del cliente que emitio la solicitud.
     private final String clientName;
+
+    // Nivel de servicio contratado que determina el SLA objetivo de atencion.
     private final ServiceLevel serviceLevel;
+
+    // Clasificacion de la mercancia que determina la combinacon y orden
+    // de adquisicion de recursos.
     private final MerchandiseType merchandiseType;
-    private final Map<Product, Integer> items; // Producto -> Cantidad solicitada
+
+    // Diccionario inmutable de productos solicitados y sus respectivas cantidades.
+    private final Map<Product, Integer> items;
+
+    // Total consolidado de articulos contenidos en el pedido
     private final int totalUnits;
 
-    // Métricas de tiempo (milisegundos)
+    // Marca de tiempo de creacion del pedido en milisegundos.
     private final long createdAt;
+
+    // Marca de tiempo en que el pedido fue retirado de la cola de espera para
+    // asignacion de stock.
+    @Setter
     private long scheduledAt;
+
+    // Marca de tiempo en que el pedido inicio efectivamente la adquisicion
+    // derecursos fisicos.
+    @Setter
     private long processingStartedAt;
+
+    // Marca de tiempo en que concluyeron todas las fases de empaque y despacho.
+    @Setter
     private long completedAt;
 
-    // Estado concurrente
+    // Estado actual del ciclo de vida del pedido (volatile para lectura concurrente
+    // segura).
+    @Setter
     private volatile OrderStatus status;
-    private volatile int progressPercent; // 0 a 100
+
+    // Porcentaje de progreso de procesamiento (0 a 100%).
+    private volatile int progressPercent;
+
+    // Descripcion textual de la fase operativa en curso
+    @Setter
     private volatile String currentPhaseDescription;
 
-    // Recursos retenidos y recurso esperado (para el Grafo de Asignación de Recursos / RAG)
+    // Conjunto de recursos fisicos que el pedido retiene actualmente
     private final Set<ResourceType> allocatedResources = ConcurrentHashMap.newKeySet();
+
+    // Recurso fisico por el cual el pedido esta bloqueado actualmente
+    @Setter
     private volatile ResourceType waitingForResource = null;
 
-    // Para forzar deadlock deliberadamente en pruebas
+    // Bandera para forzar deliberadamente el conflicto cruzado de recursos y
+    // simular un Deadlock.
+    @Setter
     private volatile boolean forceDeadlockTest = false;
 
+    /**
+     * Construye un nuevo pedido inicializando su estado en PENDIENTE.
+     *
+     * @param id              Identificador unico.
+     * @param clientName      Nombre del cliente.
+     * @param serviceLevel    Nivel de servicio (SLA).
+     * @param merchandiseType Tipo de mercancia.
+     * @param items           Mapa de productos y cantidades.
+     */
     public Order(String id, String clientName, ServiceLevel serviceLevel,
-                 MerchandiseType merchandiseType, Map<Product, Integer> items) {
+            MerchandiseType merchandiseType, Map<Product, Integer> items) {
         this.id = id;
         this.clientName = clientName;
         this.serviceLevel = serviceLevel;
@@ -52,124 +103,81 @@ public class Order {
         this.currentPhaseDescription = "En espera de asignación";
     }
 
-    // Calcula prioridad dinámica considerando envejecimiento (Aging) para evitar inanición
+    /**
+     * Calcula dinamicamente el puntaje de prioridad aplicando la tecnica de
+     * Envejecimiento.
+     * 
+     * Conforme el pedido pasa mas tiempo en la cola, su puntaje se eleva para
+     * evitar la inanicion
+     * 
+     * @param currentTime Marca de tiempo actual en milisegundos.
+     * @return Puntaje numerico compuesto
+     */
     public double calculateAgingPriority(long currentTime) {
         long waitingSeconds = (currentTime - createdAt) / 1000;
         // Prioridad base: Nivel 1 = 100 pts, Nivel 5 = 20 pts
         double baseScore = (6 - serviceLevel.getLevel()) * 20.0;
-        // Bono por tiempo de espera: 1 punto por cada segundo de espera
+        // Bono dinamico por tiempo de espera: 1.5 puntos por cada segundo acumulado
         double agingBonus = waitingSeconds * 1.5;
         return baseScore + agingBonus;
     }
 
+    /**
+     * Registra un recurso como asignado al pedido bajo sincronizacion.
+     * 
+     * @param resourceType Recurso adquirido.
+     */
     public synchronized void addAllocatedResource(ResourceType resourceType) {
         allocatedResources.add(resourceType);
     }
 
+    /**
+     * Elimina un recurso del conjunto retenido por el pedido.
+     * 
+     * @param resourceType Recurso liberado.
+     */
     public synchronized void removeAllocatedResource(ResourceType resourceType) {
         allocatedResources.remove(resourceType);
     }
 
+    // Limpia completamente todos los recursos retenidos
     public synchronized void clearAllocatedResources() {
         allocatedResources.clear();
     }
 
+    /**
+     * Retorna una vista inmutable de los recursos retenidos por el pedido.
+     *
+     * @return Conjunto de recursos asignados.
+     */
     public Set<ResourceType> getAllocatedResources() {
         return Collections.unmodifiableSet(allocatedResources);
     }
 
-    public ResourceType getWaitingForResource() {
-        return waitingForResource;
-    }
-
-    public void setWaitingForResource(ResourceType waitingForResource) {
-        this.waitingForResource = waitingForResource;
-    }
-
-    public String getId() {
-        return id;
-    }
-
-    public String getClientName() {
-        return clientName;
-    }
-
-    public ServiceLevel getServiceLevel() {
-        return serviceLevel;
-    }
-
-    public MerchandiseType getMerchandiseType() {
-        return merchandiseType;
-    }
-
+    /**
+     * Retorna una vista inmutable de los articulos del pedido.
+     *
+     * @return Mapa de articulos.
+     */
     public Map<Product, Integer> getItems() {
         return Collections.unmodifiableMap(items);
     }
 
-    public int getTotalUnits() {
-        return totalUnits;
-    }
-
-    public long getCreatedAt() {
-        return createdAt;
-    }
-
-    public long getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(long scheduledAt) {
-        this.scheduledAt = scheduledAt;
-    }
-
-    public long getProcessingStartedAt() {
-        return processingStartedAt;
-    }
-
-    public void setProcessingStartedAt(long processingStartedAt) {
-        this.processingStartedAt = processingStartedAt;
-    }
-
-    public long getCompletedAt() {
-        return completedAt;
-    }
-
-    public void setCompletedAt(long completedAt) {
-        this.completedAt = completedAt;
-    }
-
-    public OrderStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(OrderStatus status) {
-        this.status = status;
-    }
-
-    public int getProgressPercent() {
-        return progressPercent;
-    }
-
+    /**
+     * Actualiza el porcentaje de avance asegurando que permanezca en el rango
+     * valido
+     *
+     * @param progressPercent Nuevo porcentaje de avance.
+     */
     public void setProgressPercent(int progressPercent) {
         this.progressPercent = Math.min(100, Math.max(0, progressPercent));
     }
 
-    public String getCurrentPhaseDescription() {
-        return currentPhaseDescription;
-    }
-
-    public void setCurrentPhaseDescription(String currentPhaseDescription) {
-        this.currentPhaseDescription = currentPhaseDescription;
-    }
-
-    public boolean isForceDeadlockTest() {
-        return forceDeadlockTest;
-    }
-
-    public void setForceDeadlockTest(boolean forceDeadlockTest) {
-        this.forceDeadlockTest = forceDeadlockTest;
-    }
-
+    /**
+     * Retorna el tiempo total transcurrido en la cola de espera en milisegundos.
+     *
+     * @return Milisegundos en espera.
+     */
     public long getTotalWaitTimeMillis() {
         if (processingStartedAt > 0) {
             return processingStartedAt - createdAt;
@@ -177,6 +185,12 @@ public class Order {
         return System.currentTimeMillis() - createdAt;
     }
 
+    /**
+     * Retorna el tiempo total transcurrido durante el procesamiento fisico en
+     * estaciones de trabajo.
+     *
+     * @return Milisegundos de procesamiento activo.
+     */
     public long getTotalProcessingTimeMillis() {
         if (completedAt > 0 && processingStartedAt > 0) {
             return completedAt - processingStartedAt;

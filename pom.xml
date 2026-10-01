@@ -18,9 +18,18 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <flatlaf.version>3.4.1</flatlaf.version>
         <junit.version>5.10.2</junit.version>
+        <lombok.version>1.18.34</lombok.version>
     </properties>
 
     <dependencies>
+        <!-- Project Lombok para reducir código boilerplate -->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>${lombok.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- FlatLaf: Look and Feel moderno para Swing -->
         <dependency>
             <groupId>com.formdev</groupId>
@@ -50,7 +59,7 @@
 
     <build>
         <plugins>
-            <!-- Compilador Java 21 -->
+            <!-- Compilador Java 21 con soporte para procesador de anotaciones Lombok -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -58,6 +67,13 @@
                 <configuration>
                     <source>21</source>
                     <target>21</target>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
@@ -66,6 +82,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
+            </plugin>
+
+            <!-- Plugin Javadoc para generar documentación técnica HTML -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <doclint>none</doclint>
+                    <failOnError>false</failOnError>
+                </configuration>
             </plugin>
 
             <!-- Plugin para ejecutar la aplicación con mvn exec:java -->
