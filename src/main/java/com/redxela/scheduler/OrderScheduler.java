@@ -3,6 +3,7 @@ package com.redxela.scheduler;
 import com.redxela.concurrency.DeadlockDetector;
 import com.redxela.concurrency.ResourceManager;
 import com.redxela.model.*;
+import com.redxela.model.enums.*;
 import com.redxela.storage.WarehouseStorageManager;
 import java.util.*;
 import java.util.concurrent.*;
@@ -208,11 +209,11 @@ public class OrderScheduler {
             }
 
             // Ejecucion normal por fases segun el tipo de mercancia
-            List<MerchandiseType.ResourceRequirement> steps = order.getMerchandiseType().getSteps();
+            List<ResourceRequirement> steps = order.getMerchandiseType().getSteps();
             int totalSteps = steps.size();
 
             for (int i = 0; i < totalSteps; i++) {
-                MerchandiseType.ResourceRequirement req = steps.get(i);
+                ResourceRequirement req = steps.get(i);
                 order.setCurrentPhaseDescription(
                         "Solicitando " + req.resourceType().getDisplayName() + " (" + req.phaseDescription() + ")");
 

@@ -1,5 +1,6 @@
 package com.redxela.model;
 
+import com.redxela.model.enums.*;
 import lombok.Getter;
 import lombok.Setter;
 import java.util.*;
@@ -7,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * representa un pedido dentro del centro de distribucion
- * modela la informacion del cliente, nivel de servicio (SLA), mercancia,
+ * modela la informacion del cliente, nivel de servicio, mercancia,
  * tiempos de atencion y los recursos asignados/esperados durante su
  * procesamiento.
  */
@@ -27,7 +28,7 @@ public class Order {
     // de adquisicion de recursos.
     private final MerchandiseType merchandiseType;
 
-    // Diccionario inmutable de productos solicitados y sus respectivas cantidades.
+    // Diccionario de productos solicitados y sus respectivas cantidades.
     private final Map<Product, Integer> items;
 
     // Total consolidado de articulos contenidos en el pedido

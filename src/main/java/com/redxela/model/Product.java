@@ -1,5 +1,7 @@
 package com.redxela.model;
 
+import com.redxela.model.enums.*;
+
 import lombok.Getter;
 
 /**

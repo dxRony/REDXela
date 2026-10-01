@@ -1,4 +1,4 @@
-package com.redxela.model;
+package com.redxela.model.enums;
 
 import lombok.Getter;
 
@@ -16,7 +16,9 @@ public enum OrderStatus {
     COMPLETADO("Completado y Despachado", "#2ECC71"),
     CANCELADO("Cancelado / Reencolado", "#95A5A6");
 
+    // Etiqueta legible del estado para la interfaz grafica.
     private final String label;
+    // Codigo hexadecimal de color representativo.
     private final String hexColor;
 
     OrderStatus(String label, String hexColor) {

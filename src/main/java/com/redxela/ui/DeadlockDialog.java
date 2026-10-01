@@ -1,6 +1,8 @@
 package com.redxela.ui;
 
 import com.redxela.concurrency.DeadlockDetector;
+import com.redxela.concurrency.DeadlockInfo;
+import com.redxela.model.enums.*;
 import com.redxela.model.Order;
 import com.redxela.scheduler.OrderScheduler;
 
@@ -22,7 +24,7 @@ public class DeadlockDialog extends JDialog {
      * @param detector Instancia del detector para ejecutar la resolucion por desalojo.
      * @param scheduler Planificador para reencolar el pedido victima.
      */
-    public DeadlockDialog(JFrame parent, DeadlockDetector.DeadlockInfo info,
+    public DeadlockDialog(JFrame parent, DeadlockInfo info,
                           DeadlockDetector detector, OrderScheduler scheduler) {
         super(parent, "¡ALERTA CRÍTICA: INTERBLOQUEO (DEADLOCK) DETECTADO!", true);
         setSize(700, 480);

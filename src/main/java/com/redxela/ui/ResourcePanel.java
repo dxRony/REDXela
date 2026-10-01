@@ -2,7 +2,7 @@ package com.redxela.ui;
 
 import com.redxela.concurrency.ResourceManager;
 import com.redxela.model.Order;
-import com.redxela.model.ResourceType;
+import com.redxela.model.enums.ResourceType;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

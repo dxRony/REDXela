@@ -1,8 +1,8 @@
 package com.redxela.concurrency;
 
 import com.redxela.model.Order;
-import com.redxela.model.OrderStatus;
-import com.redxela.model.ResourceType;
+import com.redxela.model.enums.OrderStatus;
+import com.redxela.model.enums.ResourceType;
 import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -45,27 +45,6 @@ public class DeadlockDetector {
          * @param info Informacion del interbloqueo resuelto.
          */
         void onDeadlockResolved(DeadlockInfo info);
-    }
-
-    /**
-     * Registro inmutable que almacena el diagnostico completo de un Deadlock.
-     *
-     * @param orderA            Primer pedido involucrado en el ciclo.
-     * @param orderB            Segundo pedido involucrado en el ciclo.
-     * @param resourceA         Recurso que retiene A y que B esta esperando.
-     * @param resourceB         Recurso que retiene B y que A esta esperando.
-     * @param diagnosticMessage Explicacion textual detallada de la contencion para
-     *                          el usuario.
-     * @param detectedAt        Marca de tiempo UNIX en milisegundos cuando fue
-     *                          detectado.
-     */
-    public record DeadlockInfo(
-            Order orderA,
-            Order orderB,
-            ResourceType resourceA,
-            ResourceType resourceB,
-            String diagnosticMessage,
-            long detectedAt) {
     }
 
     /**

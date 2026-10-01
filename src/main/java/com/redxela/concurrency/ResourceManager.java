@@ -1,7 +1,7 @@
 package com.redxela.concurrency;
 
 import com.redxela.model.Order;
-import com.redxela.model.ResourceType;
+import com.redxela.model.enums.ResourceType;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Semaphore;

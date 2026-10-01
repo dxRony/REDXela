@@ -1,4 +1,4 @@
-package com.redxela.model;
+package com.redxela.model.enums;
 
 import lombok.Getter;
 
@@ -14,8 +14,11 @@ public enum ResourceType {
     QUALITY_STATION("Control de Calidad", 4, "Mesa de inspección visual, técnica y de daños"),
     BARCODE_SCANNER("Escáner de Códigos", 1, "Sistema compartido y crítico entre Recepción y Despacho");
 
+    // Nombre legible del recurso para la interfaz grafica.
     private final String displayName;
+    // Capacidad total de instancias disponibles en el centro.
     private final int totalCapacity;
+    // Descripcion operativa de la funcion del recurso.
     private final String description;
 
     ResourceType(String displayName, int totalCapacity, String description) {

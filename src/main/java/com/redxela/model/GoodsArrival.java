@@ -1,5 +1,7 @@
 package com.redxela.model;
 
+import com.redxela.model.enums.*;
+
 /**
  * Representa la llegada de un lote de mercaderia desde el Area de Recepcion
  * hacia el Area de Control de Inventario a traves del bufer.

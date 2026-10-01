@@ -1,7 +1,6 @@
-package com.redxela.model;
+package com.redxela.model.enums;
 
 import lombok.Getter;
-
 import java.util.Collections;
 import java.util.List;
 
@@ -64,9 +63,13 @@ public enum MerchandiseType {
             1.2
     );
 
+    // Nombre descriptivo para la interfaz grafica.
     private final String displayName;
+    // Descripcion operativa del tipo de mercancia.
     private final String description;
+    // Lista ordenada de fases y requerimientos de recursos.
     private final List<ResourceRequirement> steps;
+    // Factor multiplicador de duracion base.
     private final double timeMultiplier;
 
     MerchandiseType(String displayName, String description, List<ResourceRequirement> steps, double timeMultiplier) {
@@ -80,9 +83,4 @@ public enum MerchandiseType {
     public String toString() {
         return displayName;
     }
-
-    /**
-     * Registro de requerimiento individual de un recurso para una fase de procesamiento.
-     */
-    public record ResourceRequirement(ResourceType resourceType, int count, String phaseDescription) {}
 }

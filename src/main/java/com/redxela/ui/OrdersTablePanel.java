@@ -1,7 +1,7 @@
 package com.redxela.ui;
 
 import com.redxela.model.Order;
-import com.redxela.model.ResourceType;
+import com.redxela.model.enums.ResourceType;
 import com.redxela.scheduler.OrderScheduler;
 
 import javax.swing.*;

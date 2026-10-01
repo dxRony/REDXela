@@ -1,8 +1,8 @@
 package com.redxela.ui;
 
 import com.redxela.metrics.SimulationMetrics;
-import com.redxela.model.ResourceType;
-import com.redxela.model.ServiceLevel;
+import com.redxela.model.enums.ResourceType;
+import com.redxela.model.enums.ServiceLevel;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;

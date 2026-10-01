@@ -1,6 +1,7 @@
 package com.redxela.ui;
 
 import com.redxela.concurrency.DeadlockDetector;
+import com.redxela.concurrency.DeadlockInfo;
 import com.redxela.concurrency.ReceptionProcess;
 import com.redxela.concurrency.ResourceManager;
 import com.redxela.generator.OrderGenerator;
@@ -100,7 +101,7 @@ public class MainFrame extends JFrame {
         // 3. Listener de Deadlocks: abre el dialogo inmediatamente en el EDT
         deadlockDetector.addListener(new DeadlockDetector.DeadlockListener() {
             @Override
-            public void onDeadlockDetected(DeadlockDetector.DeadlockInfo info) {
+            public void onDeadlockDetected(DeadlockInfo info) {
                 SwingUtilities.invokeLater(() -> {
                     DeadlockDialog dlg = new DeadlockDialog(MainFrame.this, info, deadlockDetector, scheduler);
                     dlg.setVisible(true);
@@ -108,7 +109,7 @@ public class MainFrame extends JFrame {
             }
 
             @Override
-            public void onDeadlockResolved(DeadlockDetector.DeadlockInfo info) {
+            public void onDeadlockResolved(DeadlockInfo info) {
                 SwingUtilities.invokeLater(() -> refreshAllPanels());
             }
         });

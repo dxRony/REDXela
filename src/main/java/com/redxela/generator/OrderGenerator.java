@@ -1,6 +1,7 @@
 package com.redxela.generator;
 
 import com.redxela.model.*;
+import com.redxela.model.enums.*;
 import com.redxela.scheduler.OrderScheduler;
 import java.util.*;
 import java.util.concurrent.*;

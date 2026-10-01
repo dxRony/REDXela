@@ -1,10 +1,9 @@
-package com.redxela.model;
+package com.redxela.model.enums;
 
 import lombok.Getter;
 
 /**
- * Niveles de servicio y acuerdos de nivel de servicio (SLA) para los pedidos.
- * Nivel 1 tiene la maxima prioridad y menor tiempo objetivo de espera.
+ * Niveles de servicio y acuerdos de nivel de servicio para los pedidos
  */
 @Getter
 public enum ServiceLevel {
@@ -14,9 +13,13 @@ public enum ServiceLevel {
     PROGRAMADO(4, "Programado", "Máximo 60 min en espera", 90),        // 90 seg
     ECONOMICO(5, "Económico", "Máximo 120 min en espera", 150);        // 150 seg
 
+    // Nivel numerico de prioridad (1 es la mas alta, 5 es la mas baja).
     private final int level;
+    // Nombre legible del nivel de servicio.
     private final String displayName;
+    // Descripcion contractual del SLA.
     private final String description;
+    // Tiempo maximo objetivo en segundos simulados.
     private final int maxWaitSecondsSimulated;
 
     ServiceLevel(int level, String displayName, String description, int maxWaitSecondsSimulated) {

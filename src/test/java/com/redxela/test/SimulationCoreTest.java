@@ -1,9 +1,11 @@
 package com.redxela.test;
 
 import com.redxela.concurrency.DeadlockDetector;
+import com.redxela.concurrency.DeadlockInfo;
 import com.redxela.concurrency.ReceptionBuffer;
 import com.redxela.concurrency.ResourceManager;
 import com.redxela.model.*;
+import com.redxela.model.enums.*;
 import com.redxela.scheduler.SjfPolicy;
 import com.redxela.scheduler.StrictPriorityPolicy;
 import com.redxela.storage.WarehouseStorageManager;
@@ -107,7 +109,7 @@ public class SimulationCoreTest {
         rm.registerWaiting(orderB, ResourceType.QUALITY_STATION);
 
         // Ejecutar detector
-        DeadlockDetector.DeadlockInfo deadlock = detector.checkForDeadlock();
+        DeadlockInfo deadlock = detector.checkForDeadlock();
         assertNotNull(deadlock, "Debe detectar el ciclo de interbloqueo mutuo");
         assertEquals(OrderStatus.BLOQUEADO_DEADLOCK, orderA.getStatus());
         assertEquals(OrderStatus.BLOQUEADO_DEADLOCK, orderB.getStatus());
