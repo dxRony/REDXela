@@ -2,7 +2,6 @@ package com.redxela.ui;
 
 import com.redxela.concurrency.DeadlockDetector;
 import com.redxela.concurrency.DeadlockInfo;
-import com.redxela.model.enums.*;
 import com.redxela.model.Order;
 import com.redxela.scheduler.OrderScheduler;
 
