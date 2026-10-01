@@ -12,10 +12,6 @@ import java.util.concurrent.locks.ReentrantLock;
  * Reparte los lotes de productos en distintos pasillos, racks y niveles según disponibilidad.
  */
 public class WarehouseStorageManager {
-    private final int totalAisles;
-    private final int totalRacks;
-    private final int totalLevels;
-    private final int slotCapacity;
 
     private final List<WarehouseSlot> slots = new ArrayList<>();
     // Tabla de asignación por lote: LoteId -> Lista de slots donde quedó distribuido
@@ -26,10 +22,6 @@ public class WarehouseStorageManager {
     private final ReentrantLock storageLock = new ReentrantLock(true);
 
     public WarehouseStorageManager(int totalAisles, int totalRacks, int totalLevels, int slotCapacity) {
-        this.totalAisles = totalAisles;
-        this.totalRacks = totalRacks;
-        this.totalLevels = totalLevels;
-        this.slotCapacity = slotCapacity;
 
         // Inicializar la matriz física de slots
         for (int a = 1; a <= totalAisles; a++) {

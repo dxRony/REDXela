@@ -1,7 +1,6 @@
 package com.redxela.ui;
 
 import com.redxela.concurrency.DeadlockDetector;
-import com.redxela.concurrency.InventoryProcess;
 import com.redxela.concurrency.ReceptionProcess;
 import com.redxela.concurrency.ResourceManager;
 import com.redxela.generator.OrderGenerator;
@@ -16,13 +15,9 @@ import java.awt.*;
  * Ventana Principal de la simulación del Centro de Distribución REDXela.
  */
 public class MainFrame extends JFrame {
-    private final ResourceManager resourceManager;
-    private final WarehouseStorageManager storageManager;
     private final OrderScheduler scheduler;
-    private final DeadlockDetector deadlockDetector;
     private final OrderGenerator orderGenerator;
     private final ReceptionProcess receptionProcess;
-    private final SimulationMetrics metrics;
 
     // Paneles hijos
     private final ResourcePanel resourcePanel;
@@ -39,14 +34,10 @@ public class MainFrame extends JFrame {
                      OrderGenerator orderGenerator,
                      ReceptionProcess receptionProcess,
                      SimulationMetrics metrics) {
-        super("REDXela - Centro de Distribución de Comercio Electrónico (Sistemas Operativos 2)");
-        this.resourceManager = resourceManager;
-        this.storageManager = storageManager;
+        super("REDXela - Centro de Distribución de Comercio Electrónico (Sistemas Operativos 2)");       
         this.scheduler = scheduler;
-        this.deadlockDetector = deadlockDetector;
         this.orderGenerator = orderGenerator;
         this.receptionProcess = receptionProcess;
-        this.metrics = metrics;
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1380, 860);
