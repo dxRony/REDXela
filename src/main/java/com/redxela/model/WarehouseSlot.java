@@ -17,13 +17,13 @@ public class WarehouseSlot {
     // Numero de estante o bahia vertical.
     @Getter private final int rack;
 
-    // Nivel de altura dentro del estante (piso 1, 2 o 3).
+    // Nivel de altura dentro del estante (1, 2 o 3).
     @Getter private final int level;
 
     // Capacidad fisica maxima de unidades que caben en esta ranura.
     @Getter private final int capacity;
 
-    // Codigo del producto que ocupa actualmente el slot (onull} libre).
+    // Codigo del producto que ocupa actualmente el slot (null libre).
     private String currentProductId;
 
     // Identificador del lote de mercaderia al cual pertenecen las unidades almacenadas.

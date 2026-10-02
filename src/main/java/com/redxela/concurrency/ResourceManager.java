@@ -9,7 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Administra los recursos fisicos compartidos del centro de distribucion utilizando
- * semaforos contadores justos (FIFO) y mantiene el Grafo de Asignacion de Recursos (RAG).
+ * semaforos contadores justos (FIFO) y mantiene el Grafo de Asignacion de Recursos.
  */
 public class ResourceManager {
 

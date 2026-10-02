@@ -22,13 +22,13 @@ public class ReceptionBuffer {
     private final Queue<GoodsArrival> queue = new LinkedList<>();
 
     // Semaforo contador que cuantifica los espacios vacios disponibles. Se
-    // inicializa con
-    // bufferCapacity. Cada produce() lo decrementa con code acquire().
+    // inicializa con bufferCapacity.
+    // Cada produce() lo decrementa con code acquire().
     private final Semaphore emptySlots;
 
     // Semaforo contador que cuantifica los lotes listos para ser consumidos. Se
-    // inicializa en 0. Cada
-    // produce() lo incrementa con release(), despertando al consumidor.
+    // inicializa en 0. Cada produce() lo incrementa
+    // con release(), despertando al consumidor.
     private final Semaphore fullSlots;
 
     // Cerrojo de exclusion mutua justa (FIFO) que protege la manipulacion interna
@@ -55,7 +55,7 @@ public class ReceptionBuffer {
      * libres), el hilo de Recepcion se suspende de forma no ocupativa hasta que
      * Inventario libere un espacio.
      * - mutex.lock(): Adquiere el cerrojo de exclusion mutua.
-     * - Inserta el lote en la cola encolada.
+     * - Inserta el lote en la cola.
      * - mutex.unlock(): Libera la region critica.
      * - fullSlots.release(): Senala que existe un nuevo lote disponible,
      * despertando al hilo consumidor.
@@ -81,8 +81,7 @@ public class ReceptionBuffer {
      * Protocolo del Consumidor:
      * 
      * - fullSlots.acquire(): Si la cola esta vacia (0 elementos listos), el
-     * hilo
-     * de Inventario se suspende hasta que Recepcion deposite nueva mercaderia.
+     * hilo de Inventario se suspende hasta que Recepcion deposite nueva mercaderia.
      * - mutex.lock(): Adquiere el cerrojo de exclusion mutua.
      * - Extrae el lote en cabeza de cola.
      * - mutex.unlock(): Libera la region critica.

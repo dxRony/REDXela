@@ -2,7 +2,7 @@ package com.redxela.model;
 
 /**
  * Representa la llegada de un lote de mercaderia desde el Area de Recepcion
- * hacia el Area de Control de Inventario a traves del bufer.
+ * hacia el Area de Control de Inventario a traves del bufer
  *
  * @param batchId Identificador unico del lote.
  * @param product Producto recibido.

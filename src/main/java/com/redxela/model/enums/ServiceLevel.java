@@ -13,7 +13,7 @@ public enum ServiceLevel {
     PROGRAMADO(4, "Programado", "Máximo 60 min en espera", 90),        // 90 seg
     ECONOMICO(5, "Económico", "Máximo 120 min en espera", 150);        // 150 seg
 
-    // Nivel numerico de prioridad (1 es la mas alta, 5 es la mas baja).
+    // Nivel numerico de prioridad
     private final int level;
     // Nombre legible del nivel de servicio.
     private final String displayName;

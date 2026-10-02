@@ -15,12 +15,11 @@ public class ReceptionProcess {
     private final ReceptionBuffer buffer;
 
     // Contador atomico para generar identificadores unicos y secuenciales de lote
-    // (thread-safe).
     private final AtomicInteger batchCounter = new AtomicInteger(100);
 
     /**
      * Construye el proceso de recepcion vinculado al bufer acotado del centro.
-     *
+     * 
      * @param buffer Bufer donde se depositaran los lotes entrantes.
      */
     public ReceptionProcess(ReceptionBuffer buffer) {

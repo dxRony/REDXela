@@ -21,7 +21,7 @@ public class WarehouseStorageManager {
     // entrante con la lista de slots dispersos donde quedo almacenado.
     private final Map<String, List<WarehouseSlot>> batchAllocationTable = new ConcurrentHashMap<>();
 
-    // Mapeo de inventario consolidado: Codigo de Producto -> Unidades totales disponibles en el centro.
+    // Mapeo de inventario consolidado: Codigo de Producto-> Unidades totales disponibles en el centro.
     private final Map<String, Integer> stockMap = new ConcurrentHashMap<>();
 
     // Cerrojo de exclusion mutua para operaciones atomicas de asignacion y consumo de almacenamiento.

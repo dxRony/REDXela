@@ -32,8 +32,7 @@ public class InventoryProcess implements Runnable {
      */
     public interface InventoryListener {
         /**
-         * Invocado tras completar la asignacion no contigua de un lote en los slots
-         * fisicos.
+         * Invocado tras completar la asignacion no contigua del lote en los slots
          *
          * @param arrival        Lote procesado.
          * @param allocatedSlots Lista de slots donde quedo distribuido.

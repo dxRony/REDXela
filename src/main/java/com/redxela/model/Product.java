@@ -12,7 +12,8 @@ public class Product {
     private final String id;
     private final String name;
     private final MerchandiseType merchandiseType;
-    private final int unitsPerSlot; // Cuantas unidades de este producto caben en un slot/bloque de almacen
+    // Cuantas unidades de este producto caben en un slot/bloque de almacen
+    private final int unitsPerSlot;
 
     public Product(String id, String name, MerchandiseType merchandiseType, int unitsPerSlot) {
         this.id = id;
