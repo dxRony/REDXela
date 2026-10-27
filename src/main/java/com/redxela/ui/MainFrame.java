@@ -15,7 +15,7 @@ import java.awt.*;
 /**
  * Ventana principal de la aplicacion REDXela.
  * Integra los controles de simulacion, la visualizacion de colas y recursos,
- * la matriz de almacenamiento fisico y las metricas operativas.
+ * la matriz de almacenamiento fisico y las metricas operativas en dos vistas unificadas.
  */
 public class MainFrame extends JFrame {
 
@@ -34,11 +34,11 @@ public class MainFrame extends JFrame {
     // Panel de tablas sincronizadas de pedidos activos y en espera.
     private final OrdersTablePanel ordersTablePanel;
 
-    // Panel de visualizacion de slots del almacen no contiguo.
-    private final WarehouseViewPanel warehouseViewPanel;
-
     // Panel de KPIs y metricas de desempeno del sistema.
     private final StatsPanel statsPanel;
+
+    // Panel de visualizacion de slots del almacen no contiguo y cumplimiento de SLA.
+    private final WarehouseViewPanel warehouseViewPanel;
 
     // Timer de Swing para actualizar la interfaz periodicamente cada 300 ms en el hilo EDT.
     private final Timer refreshTimer;
@@ -75,26 +75,24 @@ public class MainFrame extends JFrame {
         JPanel toolbar = createToolbar();
         add(toolbar, BorderLayout.NORTH);
 
-        // 2. Paneles de Pestanas
+        // 2. Paneles de Pestanas (2 vistas claras sin duplicidad)
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.setFont(new Font("Segoe UI", Font.BOLD, 13));
 
-        // Pestana 1: Operaciones y Recursos
-        JPanel opsPanel = new JPanel(new BorderLayout(5, 8));
-        opsPanel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+        // Pestana 1: Centro de Operaciones y Planificacion
+        JPanel opsPanel = new JPanel(new BorderLayout(5, 6));
+        opsPanel.setBorder(BorderFactory.createEmptyBorder(6, 8, 6, 8));
         this.resourcePanel = new ResourcePanel(resourceManager);
         this.ordersTablePanel = new OrdersTablePanel(scheduler);
+        this.statsPanel = new StatsPanel(metrics);
         opsPanel.add(resourcePanel, BorderLayout.NORTH);
         opsPanel.add(ordersTablePanel, BorderLayout.CENTER);
-        tabbedPane.addTab("📦 Monitoreo de Operaciones y Recursos", opsPanel);
+        opsPanel.add(statsPanel, BorderLayout.SOUTH);
+        tabbedPane.addTab("📦 Centro de Operaciones y Planificación", opsPanel);
 
-        // Pestana 2: Almacen Fisico No Contiguo
-        this.warehouseViewPanel = new WarehouseViewPanel(storageManager);
-        tabbedPane.addTab("🏢 Almacén Físico (Asignación No Contigua)", warehouseViewPanel);
-
-        // Pestana 3: Estadisticas y Metricas
-        this.statsPanel = new StatsPanel(metrics);
-        tabbedPane.addTab("📊 Estadísticas y Políticas de Planificación", statsPanel);
+        // Pestana 2: Almacen Fisico y Cumplimiento de SLA
+        this.warehouseViewPanel = new WarehouseViewPanel(storageManager, metrics);
+        tabbedPane.addTab("🏢 Almacén Físico y Cumplimiento de SLA", warehouseViewPanel);
 
         add(tabbedPane, BorderLayout.CENTER);
 
@@ -210,7 +208,7 @@ public class MainFrame extends JFrame {
     private void refreshAllPanels() {
         resourcePanel.refreshData();
         ordersTablePanel.refreshData();
-        warehouseViewPanel.refreshData();
         statsPanel.refreshData();
+        warehouseViewPanel.refreshData();
     }
 }
