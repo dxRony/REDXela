@@ -27,6 +27,9 @@ public class ResourceManager {
     // encuentra bloqueado.
     private final Map<Order, ResourceType> orderWaitingFor = new ConcurrentHashMap<>();
 
+    // Registro de cuantas unidades retiene cada pedido de cada recurso para liberacion exacta
+    private final Map<Order, Map<ResourceType, Integer>> orderAllocatedCounts = new ConcurrentHashMap<>();
+
     // Cerrojo de exclusion mutua para garantizar operaciones atomicas e indivisibles sobre la topologia
     // del Grafo de Asignacion de Recursos (RAG).
     private final ReentrantLock ragLock = new ReentrantLock();
@@ -44,7 +47,7 @@ public class ResourceManager {
 
     /**
      * Registra explicitamente en el grafo RAG que un pedido esta en espera de un recurso.
-     * Util para pruebas unitarias deterministas y control fino de sincronizacion.
+     * Util para pruebas y control fino de sincronizacion.
      *
      * @param order Pedido que solicita el recurso.
      * @param resource Recurso fisico disputado.
@@ -63,12 +66,11 @@ public class ResourceManager {
      * Intenta adquirir permisos de un recurso fisico compartido.
      * 
      * Flujo de Concurrencia de SO:
-     * 
-     *   - Registra la arista de solicitud  Order -> Resource en el Grafo RAG.
-     *   - Invoca  Semaphore.acquire(int). Si no hay permisos suficientes disponibles,
-     *       el hilo de trabajo del pedido se suspende (estado  BLOCKED / WAITING).
+     *   - Registra la arista de solicitud Order -> Resource en el Grafo RAG.
+     *   - Invoca Semaphore.acquire(int). Si no hay permisos suficientes disponibles,
+     *     el hilo de trabajo del pedido se suspende (estado BLOCKED / WAITING).
      *   - Al despertar con los permisos en posesion, se transforma la arista de solicitud
-     *       en una arista de asignacion  Resource -> Order.
+     *     en una arista de asignacion Resource -> Order.
      * 
      * @param order Pedido en ejecucion concurrente que requiere el recurso.
      * @param resource Tipo de recurso fisico solicitado.
@@ -87,7 +89,19 @@ public class ResourceManager {
 
         // 2. Adquisicion bloqueante en el semaforo contador (suspension de hilo en espera)
         Semaphore sem = semaphores.get(resource);
-        sem.acquire(count);
+        try {
+            sem.acquire(count);
+        } catch (InterruptedException e) {
+            // Si el hilo fue interrumpido mientras esperaba en el semaforo, limpiar la solicitud
+            ragLock.lock();
+            try {
+                orderWaitingFor.remove(order);
+                order.setWaitingForResource(null);
+            } finally {
+                ragLock.unlock();
+            }
+            throw e;
+        }
 
         // 3. Tras despertar, convertir la solicitud en arista de asignacion activa (Resource -> Order)
         ragLock.lock();
@@ -96,6 +110,8 @@ public class ResourceManager {
             order.setWaitingForResource(null);
             order.addAllocatedResource(resource);
             resourceHolders.get(resource).add(order);
+            orderAllocatedCounts.computeIfAbsent(order, k -> new ConcurrentHashMap<>())
+                                .merge(resource, count, Integer::sum);
         } finally {
             ragLock.unlock();
         }
@@ -104,9 +120,6 @@ public class ResourceManager {
     /**
      * Libera las unidades de un recurso fisico previamente retenido por un pedido.
      * 
-     * Elimina la arista de asignacion del RAG y ejecuta Semaphore#release(int),
-     * lo cual despierta al siguiente hilo en la cola FIFO del semaforo.
-     * 
      * @param order Pedido que concluyo el uso del recurso.
      * @param resource Recurso fisico liberado.
      * @param count Cantidad de permisos a reincorporar al semaforo.
@@ -114,8 +127,22 @@ public class ResourceManager {
     public void releaseResource(Order order, ResourceType resource, int count) {
         ragLock.lock();
         try {
-            resourceHolders.get(resource).remove(order);
-            order.removeAllocatedResource(resource);
+            Map<ResourceType, Integer> counts = orderAllocatedCounts.get(order);
+            if (counts != null) {
+                Integer current = counts.get(resource);
+                if (current != null) {
+                    if (current <= count) {
+                        counts.remove(resource);
+                        resourceHolders.get(resource).remove(order);
+                        order.removeAllocatedResource(resource);
+                    } else {
+                        counts.put(resource, current - count);
+                    }
+                }
+            } else {
+                resourceHolders.get(resource).remove(order);
+                order.removeAllocatedResource(resource);
+            }
         } finally {
             ragLock.unlock();
         }
@@ -140,11 +167,23 @@ public class ResourceManager {
             orderWaitingFor.remove(order);
             order.setWaitingForResource(null);
 
-            Set<ResourceType> held = new HashSet<>(order.getAllocatedResources());
-            for (ResourceType res : held) {
-                resourceHolders.get(res).remove(order);
-                order.removeAllocatedResource(res);
-                semaphores.get(res).release(1);
+            Map<ResourceType, Integer> counts = orderAllocatedCounts.remove(order);
+            if (counts != null && !counts.isEmpty()) {
+                for (Map.Entry<ResourceType, Integer> entry : counts.entrySet()) {
+                    ResourceType res = entry.getKey();
+                    int heldCount = entry.getValue();
+                    resourceHolders.get(res).remove(order);
+                    order.removeAllocatedResource(res);
+                    semaphores.get(res).release(heldCount);
+                }
+            } else {
+                // Fallback defensivo si no habia conteo explicito
+                Set<ResourceType> held = new HashSet<>(order.getAllocatedResources());
+                for (ResourceType res : held) {
+                    resourceHolders.get(res).remove(order);
+                    order.removeAllocatedResource(res);
+                    semaphores.get(res).release(1);
+                }
             }
         } finally {
             ragLock.unlock();

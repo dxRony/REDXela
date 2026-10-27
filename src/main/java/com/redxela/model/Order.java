@@ -75,6 +75,14 @@ public class Order {
     @Setter
     private volatile boolean forceDeadlockTest = false;
 
+    // Hilo de ejecucion del pedido para soportar desalojo limpio (Preemption)
+    @Setter
+    private volatile Thread executionThread = null;
+
+    // Bandera de desalojo forzoso por resolucion de deadlock
+    @Setter
+    private volatile boolean preempted = false;
+
     /**
      * Construye un nuevo pedido inicializando su estado en PENDIENTE.
      *

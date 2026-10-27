@@ -12,8 +12,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Planificador central de pedidos del centro de distribucion.
  * Gestiona la cola de espera segun la politica de planificacion activa,
- * despacha pedidos concurrentes en hilos independientes y coordina la
- * asignacion
+ * despacha pedidos concurrentes en hilos independientes y coordina la asignacion
  * de recursos fisicos paso a paso.
  */
 public class OrderScheduler {
@@ -33,35 +32,29 @@ public class OrderScheduler {
     // Cola de espera protegida de pedidos listos para ser atendidos.
     private final List<Order> waitingQueue = new ArrayList<>();
 
-    // Lista thread-safe de pedidos que actualmente estan corriendo en hilos de
-    // trabajo.
+    // Lista thread-safe de pedidos que actualmente estan corriendo en hilos de trabajo.
     private final List<Order> processingOrders = new CopyOnWriteArrayList<>();
 
-    // Historial de pedidos que completaron satisfactoriamente todas sus fases de
-    // empaque y despacho.
+    // Historial de pedidos que completaron satisfactoriamente todas sus fases de empaque y despacho.
     private final List<Order> completedOrders = new CopyOnWriteArrayList<>();
 
     // Cerrojo de exclusion mutua para la manipulacion atomica de la cola de espera.
     private final ReentrantLock schedulerLock = new ReentrantLock(true);
 
-    // Grupo de hilos de trabajo bajo demanda para la ejecucion concurrente de
-    // pedidos.
+    // Grupo de hilos de trabajo bajo demanda para la ejecucion concurrente de pedidos.
     private final ExecutorService workerThreadPool;
 
-    // Planificador de tareas periodicas para el despacho continuo y monitoreo de
-    // deadlocks.
+    // Planificador de tareas periodicas para el despacho continuo y monitoreo de deadlocks.
     private final ScheduledExecutorService monitoringExecutor;
 
     // Estado de ejecucion del planificador.
     private volatile boolean isRunning = false;
 
-    // Multiplicador de velocidad de la simulacion (1.0 = normal, 2.0 = el doble de
-    // rapido).
+    // Multiplicador de velocidad de la simulacion (1.0 = normal, 2.0 = el doble de rapido).
     private volatile double simulationSpeedMultiplier = 1.0;
 
     /**
-     * Construye el planificador inicializando los grupos de hilos y la politica por
-     * defecto (Prioridad Estricta).
+     * Construye el planificador inicializando los grupos de hilos y la politica por defecto (Prioridad Estricta).
      *
      * @param resourceManager  Gestor de semaforos compartidos.
      * @param storageManager   Gestor de inventario y slots de almacen.
@@ -80,8 +73,7 @@ public class OrderScheduler {
     }
 
     /**
-     * Inicia los bucles periodicos de despacho de pedidos y deteccion de deadlocks
-     * en segundo plano.
+     * Inicia los bucles periodicos de despacho de pedidos y deteccion de deadlocks en segundo plano.
      */
     public void start() {
         if (isRunning)
@@ -89,10 +81,22 @@ public class OrderScheduler {
         isRunning = true;
 
         // Despacho continuo de la cola de espera (cada 200 ms)
-        monitoringExecutor.scheduleWithFixedDelay(this::dispatchPendingOrders, 200, 200, TimeUnit.MILLISECONDS);
+        monitoringExecutor.scheduleWithFixedDelay(() -> {
+            try {
+                dispatchPendingOrders();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }, 200, 200, TimeUnit.MILLISECONDS);
 
         // Inspeccion continua del grafo RAG en busqueda de deadlocks (cada 300 ms)
-        monitoringExecutor.scheduleWithFixedDelay(deadlockDetector::checkForDeadlock, 300, 300, TimeUnit.MILLISECONDS);
+        monitoringExecutor.scheduleWithFixedDelay(() -> {
+            try {
+                deadlockDetector.checkForDeadlock();
+            } catch (Throwable t) {
+                t.printStackTrace();
+            }
+        }, 300, 300, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -105,8 +109,7 @@ public class OrderScheduler {
     }
 
     /**
-     * Encola un nuevo pedido en la lista de espera, reordenandola segun la politica
-     * activa.
+     * Encola un nuevo pedido en la lista de espera, reordenandola segun la politica activa.
      *
      * @param order Pedido a ingresar al sistema.
      */
@@ -123,8 +126,7 @@ public class OrderScheduler {
     }
 
     /**
-     * Cambia la politica de planificacion en tiempo real y reordena inmediatamente
-     * la cola de espera.
+     * Cambia la politica de planificacion en tiempo real y reordena inmediatamente la cola de espera.
      *
      * @param newPolicy Nueva politica a aplicar (AgingPriorityPolicy o SjfPolicy).
      */
@@ -147,8 +149,7 @@ public class OrderScheduler {
 
     /**
      * Bucle periodico de despacho:
-     * Inspecciona la cabeza de la cola de espera, verifica si hay stock fisico
-     * suficiente en almacen
+     * Inspecciona la cabeza de la cola de espera, verifica si hay stock fisico suficiente en almacen
      * y, de ser asi, despacha el pedido a un hilo de trabajo concurrente.
      */
     private void dispatchPendingOrders() {
@@ -190,12 +191,14 @@ public class OrderScheduler {
     }
 
     /**
-     * Ciclo de vida concurrente de un pedido en ejecucion (codigo del hilo
-     * trabajador).
+     * Ciclo de vida concurrente de un pedido en ejecucion (codigo del hilo trabajador).
      *
      * @param order Pedido a procesar.
      */
     private void processOrderLifecycle(Order order) {
+        order.setExecutionThread(Thread.currentThread());
+        order.setPreempted(false);
+
         try {
             // Descontar inventario fisico del almacen
             for (Map.Entry<Product, Integer> entry : order.getItems().entrySet()) {
@@ -222,8 +225,7 @@ public class OrderScheduler {
 
                 order.setCurrentPhaseDescription("Ejecutando: " + req.phaseDescription());
 
-                // Simular tiempo de trabajo en la estacion (proporcional a cantidad de
-                // articulos)
+                // Simular tiempo de trabajo en la estacion (proporcional a cantidad de articulos)
                 long workDurationMs = (long) ((req.count() * 1200L + order.getTotalUnits() * 400L)
                         / simulationSpeedMultiplier);
                 simulateWork(order, workDurationMs, (i * 100) / totalSteps, ((i + 1) * 100) / totalSteps);
@@ -245,14 +247,16 @@ public class OrderScheduler {
             // Hilo interrumpido o desalojado por resolucion de deadlock
             order.setCurrentPhaseDescription("Interrumpido / Desalojado de recursos");
         } finally {
-            resourceManager.releaseAllResources(order);
+            if (!order.isPreempted()) {
+                resourceManager.releaseAllResources(order);
+            }
         }
     }
 
     /**
      * Ejecuta deliberadamente la secuencia de contencion cruzada de Deadlock:
-     * El pedido Fragil toma Calidad y pide Montacargas;
-     * El pedido Pesado toma Montacargas y pide Calidad.
+     * El pedido Fragil agota y retiene Calidad, y luego pide Montacargas;
+     * El pedido Pesado agota y retiene Montacargas, y luego pide Calidad.
      *
      * @param order Pedido involucrado en el escenario de prueba.
      * @throws InterruptedException Si el hilo es interrumpido durante la espera.
@@ -260,44 +264,51 @@ public class OrderScheduler {
     private void executeDeadlockScenario(Order order) throws InterruptedException {
         if (order.getMerchandiseType() == MerchandiseType.FRAGIL) {
             order.setCurrentPhaseDescription("DEADLOCK TEST: Reteniendo Control de Calidad...");
-            resourceManager.acquireResource(order, ResourceType.QUALITY_STATION, 1);
+            int toAcquire = Math.max(1, resourceManager.getAvailableUnits(ResourceType.QUALITY_STATION));
+            resourceManager.acquireResource(order, ResourceType.QUALITY_STATION, toAcquire);
             order.setProgressPercent(30);
 
             // Pausa breve para garantizar que el pedido Pesado retenga el Montacargas
-            Thread.sleep(1500);
+            Thread.sleep(1200);
 
             order.setCurrentPhaseDescription("DEADLOCK TEST: Solicitando Montacargas (¡Esperando!)...");
-            // Intentar adquirir Montacargas (quedara bloqueado en Deadlock)
+            // Intentar adquirir Montacargas (quedara bloqueado en Deadlock porque el pedido Pesado lo agoto)
             resourceManager.acquireResource(order, ResourceType.FORKLIFT, 1);
 
-            // Si sobrevive a la resolucion de deadlock:
-            finishSuccessfulDeadlockProcessing(order);
+            // Si sobrevive a la resolucion de deadlock como ganador:
+            if (!order.isPreempted()) {
+                finishSuccessfulDeadlockProcessing(order);
+            }
 
         } else if (order.getMerchandiseType() == MerchandiseType.PESADA) {
             order.setCurrentPhaseDescription("DEADLOCK TEST: Reteniendo Montacargas...");
-            resourceManager.acquireResource(order, ResourceType.FORKLIFT, 1);
+            int toAcquire = Math.max(1, resourceManager.getAvailableUnits(ResourceType.FORKLIFT));
+            resourceManager.acquireResource(order, ResourceType.FORKLIFT, toAcquire);
             order.setProgressPercent(30);
 
             // Pausa para sincronizar con el pedido Fragil
-            Thread.sleep(1500);
+            Thread.sleep(1200);
 
             order.setCurrentPhaseDescription("DEADLOCK TEST: Solicitando Control de Calidad (¡Esperando!)...");
-            // Intentar adquirir Control de Calidad (quedara bloqueado en Deadlock)
+            // Intentar adquirir Control de Calidad (quedara bloqueado en Deadlock porque el pedido Fragil lo agoto)
             resourceManager.acquireResource(order, ResourceType.QUALITY_STATION, 1);
 
-            // Si sobrevive a la resolucion de deadlock:
-            finishSuccessfulDeadlockProcessing(order);
+            // Si sobrevive a la resolucion de deadlock como ganador:
+            if (!order.isPreempted()) {
+                finishSuccessfulDeadlockProcessing(order);
+            }
         }
     }
 
     /**
-     * Concluye el procesamiento normal del pedido que resulto favorecido tras la
-     * resolucion del Deadlock.
+     * Concluye el procesamiento normal del pedido que resulto favorecido tras la resolucion del Deadlock.
      *
      * @param order Pedido ganador.
      * @throws InterruptedException Si es interrumpido.
      */
     private void finishSuccessfulDeadlockProcessing(Order order) throws InterruptedException {
+        if (order.isPreempted()) return;
+
         order.setStatus(OrderStatus.EN_PROCESO);
         order.setCurrentPhaseDescription("Reanudado tras resolución de Deadlock: Procesando...");
         simulateWork(order, (long) (3000 / simulationSpeedMultiplier), 40, 100);
@@ -313,8 +324,7 @@ public class OrderScheduler {
     }
 
     /**
-     * Simula el paso del tiempo de una operacion fisica actualizando
-     * progresivamente el porcentaje de avance.
+     * Simula el paso del tiempo de una operacion fisica actualizando progresivamente el porcentaje de avance.
      *
      * @param order           Pedido a actualizar.
      * @param totalDurationMs Duracion total en milisegundos.
@@ -334,8 +344,7 @@ public class OrderScheduler {
     }
 
     /**
-     * Reincorpora un pedido a la cola de espera tras haber sido desalojado en la
-     * resolucion de un Deadlock.
+     * Reincorpora un pedido a la cola de espera tras haber sido desalojado en la resolucion de un Deadlock.
      *
      * @param order Pedido a reencolar.
      */
