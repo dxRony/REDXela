@@ -39,13 +39,13 @@ public class InventoryProcess implements Runnable {
         running.set(true);
         while (running.get() && !Thread.currentThread().isInterrupted()) {
             try {
-                // Consumidor: Se bloquea pasivamente en fullSlots hasta que Recepcion deposite mercaderia
+                // consumidor: Se bloquea pasivamente en fullSlots hasta que Recepcion deposite mercaderia
                 GoodsArrival arrival = buffer.consume();
 
-                // Simulacion del tiempo fisico de inspeccion y desempaque del lote
+                // simulacion del tiempo fisico de inspeccion y desempaque del lote
                 Thread.sleep(800);
 
-                // Asignar los slots fisicos de forma NO CONTIGUA en el almacen (Paginacion)
+                // asignando los slots fisicos de forma NO CONTIGUA en el almacen (Paginacion)
                 storageManager.allocateGoods(arrival.batchId(), arrival.product(), arrival.units());
 
             } catch (InterruptedException e) {

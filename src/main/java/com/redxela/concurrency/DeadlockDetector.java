@@ -92,19 +92,19 @@ public class DeadlockDetector {
             Map<Order, ResourceType> waitingMap = resourceManager.getOrderWaitingForMap();
             Map<ResourceType, Set<Order>> holdersMap = resourceManager.getResourceHoldersMap();
 
-            // Buscar ciclo de espera mutua entre pares de procesos en el grafo
+            // buscando ciclo de espera mutua entre pares de procesos en el grafo
             for (Map.Entry<Order, ResourceType> entryA : waitingMap.entrySet()) {
                 Order orderA = entryA.getKey();
                 ResourceType resWaitedByA = entryA.getValue();
 
-                // Conjunto de procesos que retienen el recurso esperado por A
+                // conjunto de procesos que retienen el recurso esperado por A
                 Set<Order> holdersOfWaitedRes = holdersMap.getOrDefault(resWaitedByA, Collections.emptySet());
 
                 for (Order orderB : holdersOfWaitedRes) {
                     if (orderB.equals(orderA))
                         continue;
 
-                    // Verificar si B esta esperando algun recurso que retiene A
+                    // verificando si B esta esperando algun recurso que retiene A
                     ResourceType resWaitedByB = waitingMap.get(orderB);
                     if (resWaitedByB != null && orderA.getAllocatedResources().contains(resWaitedByB)) {
                         // ¡CICLO CONFIRMADO! Se satisfacen las condiciones de Coffman
@@ -125,7 +125,7 @@ public class DeadlockDetector {
                                 orderA, orderB, resWaitedByB, resWaitedByA, message, System.currentTimeMillis());
                         this.currentDeadlock = info;
 
-                        // Notificar a observadores registrados (dispara modal en la interfaz)
+                        // notificando a observadores registrados (dispara modal en la interfaz)
                         for (DeadlockListener l : listeners) {
                             try {
                                 l.onDeadlockDetected(info);
@@ -157,31 +157,31 @@ public class DeadlockDetector {
 
         DeadlockInfo resolved = currentDeadlock;
 
-        // 1. Interrumpir el hilo de la victima y marcar bandera de preemption
+        // interrumiendo el hilo de la victima y marcar bandera de preemption
         loser.setPreempted(true);
         Thread loserThread = loser.getExecutionThread();
         if (loserThread != null && loserThread.isAlive()) {
             loserThread.interrupt();
         }
 
-        // 2. Desalojo forzoso de recursos del proceso victima (Preemption)
+        // haciendo desalojo forzoso de recursos del proceso victima (Preemption)
         resourceManager.releaseAllResources(loser);
         loser.setStatus(OrderStatus.EN_ESPERA_RECURSOS);
         loser.setCurrentPhaseDescription("Reencolado tras resolución de deadlock (cedió recursos)");
         loser.setForceDeadlockTest(false);
 
-        // 3. Reencolar a la victima en el planificador para ser atendido mas adelante
+        // reencolando a la victima en el planificador para ser atendido mas adelante
         if (reenqueueCallback != null) {
             reenqueueCallback.accept(loser);
         }
 
-        // 4. Restaurar estado de ejecucion activa para el pedido favorecido
+        // restaurando estado de ejecucion activa para el pedido favorecido
         winner.setStatus(OrderStatus.EN_PROCESO);
         winner.setForceDeadlockTest(false);
 
         this.currentDeadlock = null;
 
-        // 5. Notificar a los observadores que el deadlock fue resuelto
+        // notificando a los observadores que el deadlock fue resuelto
         for (DeadlockListener l : listeners) {
             try {
                 l.onDeadlockResolved(resolved);

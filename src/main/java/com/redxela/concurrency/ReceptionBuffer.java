@@ -101,7 +101,7 @@ public class ReceptionBuffer {
         } finally {
             mutex.unlock();
         }
-        emptySlots.release(); // Senala espacio disponible al productor
+        emptySlots.release(); // senala espacio disponible al productor
         return item;
     }
 

@@ -12,7 +12,7 @@ public class AgingPriorityPolicy implements SchedulingPolicy {
 
     @Override
     public String getName() {
-        return "Prioridad Dinámica con Envejecimiento (Aging)";
+        return "Prioridad por SLA con Aging";
     }
 
     @Override

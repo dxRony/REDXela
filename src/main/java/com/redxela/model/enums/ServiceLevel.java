@@ -7,9 +7,9 @@ import lombok.Getter;
  */
 @Getter
 public enum ServiceLevel {
-    EXPRES(1, "Exprés", "Procesamiento casi instantáneo", 5),          // 5 seg / simulacion
-    PRIORITARIO(2, "Prioritario", "Máximo 10 min en espera", 20),      // 20 seg
-    ESTANDAR(3, "Estándar", "Máximo 30 min en espera", 45),            // 45 seg
+    EXPRES(1, "Exprés", "Procesamiento casi instantáneo", 10),          // 10 seg / simulacion
+    PRIORITARIO(2, "Prioritario", "Máximo 10 min en espera", 18),      // 18 seg
+    ESTANDAR(3, "Estándar", "Máximo 30 min en espera", 30),            // 30 seg
     PROGRAMADO(4, "Programado", "Máximo 60 min en espera", 90),        // 90 seg
     ECONOMICO(5, "Económico", "Máximo 120 min en espera", 150);        // 150 seg
 

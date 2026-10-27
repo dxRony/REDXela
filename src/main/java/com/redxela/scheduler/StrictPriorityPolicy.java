@@ -12,7 +12,7 @@ public class StrictPriorityPolicy implements SchedulingPolicy {
 
     @Override
     public String getName() {
-        return "Prioridad Estricta (SLA)";
+        return "Prioridad Estricta";
     }
 
     @Override

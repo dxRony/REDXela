@@ -165,8 +165,8 @@ public class OrderScheduler {
             while (it.hasNext()) {
                 Order order = it.next();
 
-                // Verificar existencias fisicas en el almacen
-                if (!storageManager.hasStockForOrder(order.getItems())) {
+                // verificando existencias fisicas en el almacen
+                if (!order.isStockDeducted() && !storageManager.hasStockForOrder(order.getItems())) {
                     order.setStatus(OrderStatus.EN_ESPERA_INVENTARIO);
                     order.setCurrentPhaseDescription("Esperando recepción de stock en almacén");
                     continue; // Pasa al siguiente pedido disponible
@@ -180,7 +180,7 @@ public class OrderScheduler {
             schedulerLock.unlock();
         }
 
-        // Lanzar cada pedido en un hilo independiente del ThreadPool
+        // lanzando cada pedido en un hilo independiente del ThreadPool
         for (Order order : toDispatch) {
             order.setScheduledAt(System.currentTimeMillis());
             order.setProcessingStartedAt(System.currentTimeMillis());
@@ -200,9 +200,12 @@ public class OrderScheduler {
         order.setPreempted(false);
 
         try {
-            // Descontar inventario fisico del almacen
-            for (Map.Entry<Product, Integer> entry : order.getItems().entrySet()) {
-                storageManager.consumeStock(entry.getKey(), entry.getValue());
+            // descontando inventario fisico del almacen si no se dedujo previamente
+            if (!order.isStockDeducted()) {
+                for (Map.Entry<Product, Integer> entry : order.getItems().entrySet()) {
+                    storageManager.consumeStock(entry.getKey(), entry.getValue());
+                }
+                order.setStockDeducted(true);
             }
 
             // Si es un test de deadlock deliberado, ejecutar la secuencia cruzada
@@ -268,11 +271,11 @@ public class OrderScheduler {
             resourceManager.acquireResource(order, ResourceType.QUALITY_STATION, toAcquire);
             order.setProgressPercent(30);
 
-            // Pausa breve para garantizar que el pedido Pesado retenga el Montacargas
+            // pausa para garantizar que el pedido Pesado retenga el Montacargas
             Thread.sleep(1200);
 
             order.setCurrentPhaseDescription("DEADLOCK TEST: Solicitando Montacargas (¡Esperando!)...");
-            // Intentar adquirir Montacargas (quedara bloqueado en Deadlock porque el pedido Pesado lo agoto)
+            // intentando adquirir Montacargas (quedara bloqueado en Deadlock porque el pedido Pesado lo agoto)
             resourceManager.acquireResource(order, ResourceType.FORKLIFT, 1);
 
             // Si sobrevive a la resolucion de deadlock como ganador:
@@ -286,11 +289,11 @@ public class OrderScheduler {
             resourceManager.acquireResource(order, ResourceType.FORKLIFT, toAcquire);
             order.setProgressPercent(30);
 
-            // Pausa para sincronizar con el pedido Fragil
+            // pausa para sincronizar con el pedido Fragil
             Thread.sleep(1200);
 
             order.setCurrentPhaseDescription("DEADLOCK TEST: Solicitando Control de Calidad (¡Esperando!)...");
-            // Intentar adquirir Control de Calidad (quedara bloqueado en Deadlock porque el pedido Fragil lo agoto)
+            // intentando adquirir Control de Calidad (quedara bloqueado en Deadlock porque el pedido Fragil lo agoto)
             resourceManager.acquireResource(order, ResourceType.QUALITY_STATION, 1);
 
             // Si sobrevive a la resolucion de deadlock como ganador:
@@ -370,6 +373,7 @@ public class OrderScheduler {
     public List<Order> getWaitingQueue() {
         schedulerLock.lock();
         try {
+            sortWaitingQueue();
             return new ArrayList<>(waitingQueue);
         } finally {
             schedulerLock.unlock();

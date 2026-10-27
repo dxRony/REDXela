@@ -13,7 +13,7 @@ public class SjfPolicy implements SchedulingPolicy {
 
     @Override
     public String getName() {
-        return "Trabajo Más Corto Primero (SJF / Cantidad de Artículos)";
+        return "Menor Cantidad de Artículos (SJF)";
     }
 
     @Override

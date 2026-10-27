@@ -7,93 +7,130 @@ import com.redxela.scheduler.OrderScheduler;
 import javax.swing.*;
 import java.awt.*;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Dialogo modal para la creacion manual de pedidos personalizados.
- * Permite definir el cliente, nivel de servicio SLA, producto solicitado y cantidad.
+ * Diálogo modal para la creación manual de pedidos personalizados.
+ * Permite definir el ID único, cliente, nivel de servicio SLA, tipo de mercancía,
+ * producto solicitado y cantidad de unidades.
  */
 public class ManualOrderDialog extends JDialog {
 
-    // Secuenciador para IDs de pedidos manuales (inicia en 5000 para diferenciarlos visualmente).
-    private static final AtomicInteger manualCounter = new AtomicInteger(5000);
+    // Secuenciador para IDs de pedidos manuales si se deja vacío.
+    private static final AtomicInteger manualCounter = new AtomicInteger(1000);
 
     /**
      * Construye y despliega el formulario modal de ingreso manual.
      *
      * @param parent Ventana principal padre.
-     * @param scheduler Planificador donde se insertara el pedido.
+     * @param scheduler Planificador donde se insertará el pedido.
      */
     public ManualOrderDialog(JFrame parent, OrderScheduler scheduler) {
         super(parent, "Ingreso Manual de Pedido", true);
-        setSize(480, 360);
+        setSize(520, 420);
         setLocationRelativeTo(parent);
         setLayout(new BorderLayout(10, 10));
 
-        JPanel form = new JPanel(new GridLayout(5, 2, 10, 12));
+        JPanel form = new JPanel(new GridLayout(6, 2, 10, 12));
         form.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
 
-        // Campos del formulario
+        // 1. ID del Pedido
+        form.add(new JLabel("ID del Pedido:"));
+        JTextField txtId = new JTextField("MAN-999");
+        form.add(txtId);
+
+        // 2. Nombre del Cliente
         form.add(new JLabel("Nombre del Cliente:"));
-        JTextField txtClient = new JTextField("Cliente Manual #" + manualCounter.incrementAndGet());
+        JTextField txtClient = new JTextField("Catedrático SO2");
         form.add(txtClient);
 
+        // 3. Nivel de Servicio (SLA)
         form.add(new JLabel("Nivel de Servicio (SLA):"));
         JComboBox<ServiceLevel> cmbSla = new JComboBox<>(ServiceLevel.values());
-        cmbSla.setSelectedItem(ServiceLevel.PRIORITARIO);
+        cmbSla.setSelectedItem(ServiceLevel.EXPRES);
         form.add(cmbSla);
 
+        // 4. Tipo de Mercancía
+        form.add(new JLabel("Tipo de Mercancía:"));
+        JComboBox<MerchandiseType> cmbType = new JComboBox<>(MerchandiseType.values());
+        cmbType.setSelectedItem(MerchandiseType.PERECEDERA);
+        form.add(cmbType);
+
+        // 5. Producto
         form.add(new JLabel("Producto:"));
-        JComboBox<Product> cmbProduct = new JComboBox<>(Catalog.getAllProducts().toArray(new Product[0]));
+        JComboBox<Product> cmbProduct = new JComboBox<>();
         form.add(cmbProduct);
 
-        form.add(new JLabel("Cantidad de Unidades:"));
-        JSpinner spinQty = new JSpinner(new SpinnerNumberModel(2, 1, 20, 1));
-        form.add(spinQty);
-
-        form.add(new JLabel("Tipo de Mercancía:"));
-        JLabel lblType = new JLabel(Catalog.getAllProducts().get(0).getMerchandiseType().getDisplayName());
-        lblType.setForeground(new Color(52, 152, 219));
-        form.add(lblType);
-
-        cmbProduct.addActionListener(e -> {
-            Product selected = (Product) cmbProduct.getSelectedItem();
-            if (selected != null) {
-                lblType.setText(selected.getMerchandiseType().getDisplayName());
+        // Método auxiliar para actualizar los productos según el tipo de mercancía seleccionado
+        Runnable updateProducts = () -> {
+            MerchandiseType selectedType = (MerchandiseType) cmbType.getSelectedItem();
+            cmbProduct.removeAllItems();
+            if (selectedType != null) {
+                List<Product> products = Catalog.getByMerchandiseType(selectedType);
+                for (Product p : products) {
+                    cmbProduct.addItem(p);
+                }
             }
-        });
+        };
+
+        cmbType.addActionListener(e -> updateProducts.run());
+        updateProducts.run(); // Carga inicial
+
+        // 6. Cantidad de Unidades
+        form.add(new JLabel("Cantidad de Unidades:"));
+        JSpinner spinQty = new JSpinner(new SpinnerNumberModel(2, 1, 50, 1));
+        form.add(spinQty);
 
         add(form, BorderLayout.CENTER);
 
-        // Botones de accion
+        // Botones de acción
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT));
         JButton btnCancel = new JButton("Cancelar");
         btnCancel.addActionListener(e -> dispose());
 
-        JButton btnSubmit = new JButton("Ingresar Pedido");
+        JButton btnSubmit = new JButton("Crear Pedido");
         btnSubmit.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnSubmit.setBackground(new Color(46, 204, 113));
         btnSubmit.setForeground(Color.BLACK);
         btnSubmit.addActionListener(e -> {
             Product prod = (Product) cmbProduct.getSelectedItem();
-            if (prod == null) return;
+            if (prod == null) {
+                JOptionPane.showMessageDialog(this, "Debe seleccionar un producto válido.", "Aviso", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            String orderId = txtId.getText().trim();
+            if (orderId.isEmpty()) {
+                orderId = "MAN-" + manualCounter.incrementAndGet();
+            }
+
+            String client = txtClient.getText().trim();
+            if (client.isEmpty()) {
+                client = "Cliente Anónimo";
+            }
 
             int qty = (int) spinQty.getValue();
             Map<Product, Integer> items = new HashMap<>();
             items.put(prod, qty);
 
+            MerchandiseType selectedType = (MerchandiseType) cmbType.getSelectedItem();
+            if (selectedType == null) {
+                selectedType = prod.getMerchandiseType();
+            }
+
             Order order = new Order(
-                    String.valueOf(manualCounter.get()),
-                    txtClient.getText().trim(),
+                    orderId,
+                    client,
                     (ServiceLevel) cmbSla.getSelectedItem(),
-                    prod.getMerchandiseType(),
+                    selectedType,
                     items
             );
 
             scheduler.addOrder(order);
             JOptionPane.showMessageDialog(this,
-                    "Pedido #" + order.getId() + " ingresado con éxito al sistema.",
+                    "Pedido #" + order.getId() + " (" + order.getMerchandiseType().getDisplayName() + ") creado con éxito.",
                     "Pedido Registrado",
                     JOptionPane.INFORMATION_MESSAGE);
             dispose();

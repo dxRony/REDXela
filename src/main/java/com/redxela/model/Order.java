@@ -82,6 +82,9 @@ public class Order {
     // Bandera de desalojo forzoso por resolucion de deadlock
     @Setter
     private volatile boolean preempted = false;
+    // Bandera que indica si el stock del pedido ya fue deducido del inventario global
+    @Setter
+    private volatile boolean stockDeducted = false;
 
     /**
      * Construye un nuevo pedido inicializando su estado en PENDIENTE.

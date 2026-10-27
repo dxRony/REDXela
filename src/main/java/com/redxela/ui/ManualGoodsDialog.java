@@ -47,7 +47,7 @@ public class ManualGoodsDialog extends JDialog {
         JButton btnCancel = new JButton("Cancelar");
         btnCancel.addActionListener(e -> dispose());
 
-        JButton btnSubmit = new JButton("Registrar Llegada de Camión");
+        JButton btnSubmit = new JButton("Descargar al Muelle");
         btnSubmit.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnSubmit.setBackground(new Color(52, 152, 219));
         btnSubmit.setForeground(Color.BLACK);

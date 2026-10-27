@@ -78,7 +78,7 @@ public class ResourceManager {
      * @throws InterruptedException Si el hilo es interrumpido mientras espera los permisos.
      */
     public void acquireResource(Order order, ResourceType resource, int count) throws InterruptedException {
-        // 1. Registrar arista de solicitud en el RAG (Order -> Resource)
+        // registrando arista de solicitud en el RAG (Order -> Resource)
         ragLock.lock();
         try {
             order.setWaitingForResource(resource);
@@ -87,12 +87,12 @@ public class ResourceManager {
             ragLock.unlock();
         }
 
-        // 2. Adquisicion bloqueante en el semaforo contador (suspension de hilo en espera)
+        // adquisicion bloqueante en el semaforo contador (suspension de hilo en espera)
         Semaphore sem = semaphores.get(resource);
         try {
             sem.acquire(count);
         } catch (InterruptedException e) {
-            // Si el hilo fue interrumpido mientras esperaba en el semaforo, limpiar la solicitud
+            // si el hilo fue interrumpido mientras esperaba en el semaforo, limpiar la solicitud
             ragLock.lock();
             try {
                 orderWaitingFor.remove(order);
@@ -103,7 +103,7 @@ public class ResourceManager {
             throw e;
         }
 
-        // 3. Tras despertar, convertir la solicitud en arista de asignacion activa (Resource -> Order)
+        // cuando despierta, convierte la solicitud en arista de asignacion activa (Resource -> Order)
         ragLock.lock();
         try {
             orderWaitingFor.remove(order);
@@ -147,7 +147,7 @@ public class ResourceManager {
             ragLock.unlock();
         }
 
-        // Devolver permisos al semaforo para despertar hilos en espera
+        // devolver permisos al semaforo para despertar hilos en espera
         Semaphore sem = semaphores.get(resource);
         sem.release(count);
     }
@@ -177,7 +177,7 @@ public class ResourceManager {
                     semaphores.get(res).release(heldCount);
                 }
             } else {
-                // Fallback defensivo si no habia conteo explicito
+                // fallback defensivo si no habia conteo explicito
                 Set<ResourceType> held = new HashSet<>(order.getAllocatedResources());
                 for (ResourceType res : held) {
                     resourceHolders.get(res).remove(order);

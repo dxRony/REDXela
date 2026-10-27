@@ -144,7 +144,7 @@ public class OrderGenerator {
                 items2);
         orderPesado.setForceDeadlockTest(true);
 
-        // Anadirlos simultaneamente al planificador para forzar la competencia
+        // los anade simultaneamente al planificador para forzar la competencia
         scheduler.addOrder(orderFragil);
         scheduler.addOrder(orderPesado);
     }
